@@ -1,6 +1,9 @@
 # Stock Trading System 📈
 
 一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析和微信推送功能。
+---
+
+项目主要依靠Lingma 生成，以及手搓代码。
 
 ## ✨ 功能特性
 
@@ -47,7 +50,6 @@
 
 ### 外部 API
 - **新浪股票 API**：实时行情数据
-- **timor.tech**：中国节假日判断
 - **Server 酱**：微信消息推送
 - **DeepSeek API**：AI 对话服务
 
@@ -193,8 +195,7 @@ npm run dev
 
 | 方法 | 路径 | 描述 |
 |------|------|------|
-| POST | `/api/ai/holiday` | AI 查询节假日 |
-| POST | `/api/ai/write-file` | AI 写入文件 |
+| GET | `/api/ai/fetch-holiday?year={year}` | AI 获取指定年份节假日并写入 JSON 文件 |
 
 ## 🔧 配置说明
 
@@ -313,6 +314,11 @@ java -version
 
 - GitHub: [WangJiyuanYo](https://github.com/WangJiyuanYo)
 - 项目仓库: [stock-trading-system](https://github.com/WangJiyuanYo/stock-trading-system)
+
+## 📋 To-Do List
+
+- [ ] 集成飞书机器人 webhook，支持飞书消息推送
+- [ ] 使用 AI Agent 实现股票信息的智能添加和修改功能
 
 ---
 

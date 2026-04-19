@@ -4,19 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,24 +24,13 @@ public class TradingDayUtil {
 
     private static final Logger log = LoggerFactory.getLogger(TradingDayUtil.class);
 
-    private static final String HOLIDAY_API_URL = "https://timor.tech/api/holiday/";
-
-    private final WebClient webClient;
-
-    // 缓存节假日数据，避免频繁调用 API
-    private Map<String, Boolean> holidayCache = new HashMap<>();
-
     private final ObjectMapper objectMapper;
 
     @Value("${app.json.calender.path}")
     private String calenderPath;
 
-    public TradingDayUtil(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public TradingDayUtil(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.webClient = webClientBuilder
-                .baseUrl(HOLIDAY_API_URL)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
     }
 
     /**
@@ -72,119 +56,19 @@ public class TradingDayUtil {
             return false;
         }
 
-        // 2. 排除法定节假日（简化版，可根据需要扩展）
-//        if (isHoliday(date)) {
-//            log.info("今日是节假日，非交易日");
-//            return false;
-//        }
+        // 2. 检查是否为法定节假日
         try {
-            return checkIsChineseHoliday(date);
-        } catch (IOException e) {
-            log.error("调用错误");
-        }
-
-        // 3. 检查是否在交易时间内（可选）
-        // 如果需要在非交易时间也执行，可以注释掉这部分
-//        if (!isWithinTradingHours()) {
-//            log.info("当前时间不在交易时段内");
-//            return false;
-//        }
-
-//        log.info("今日是交易日：{}", date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-//        return true;
-        return false;
-    }
-
-    /**
-     * 判断是否为节假日（调用 timor.tech API）
-     * API 文档：https://timor.tech/api/holiday/
-     *
-     * @param date 日期
-     * @return true-是节假日，false-不是节假日
-     */
-    private boolean isHoliday(LocalDate date) {
-        String dateStr = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-
-        // 1. 先查缓存
-        if (holidayCache.containsKey(dateStr)) {
-            Boolean isHoliday = holidayCache.get(dateStr);
-            log.debug("命中缓存：{} 是节假日={}", dateStr, isHoliday);
-            return isHoliday;
-        }
-
-        try {
-            // 2. 调用 API 查询
-            String response = webClient.get()
-                    .uri("info/{date}", dateStr)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-
-            log.debug("节假日 API 响应：{}", response);
-
-            // 3. 解析响应
-            // API 返回格式：{"code":0,"message":"ok","date":{"...","type":"work","name":"工作日"}}
-            // type: "work"=工作日，"rest"=休息日
-            boolean isHoliday = response != null && response.contains("\"type\":\"rest\"");
-
-            // 4. 存入缓存
-            holidayCache.put(dateStr, isHoliday);
-
+            boolean isHoliday = checkIsChineseHoliday(date);
             if (isHoliday) {
-                // 尝试获取节日名称
-                String festivalName = extractFestivalName(response);
-                log.info("今日是节假日：{} ({})", dateStr, festivalName);
+                log.info("今日是节假日，非交易日");
+                return false;
             }
-
-            return isHoliday;
-
-        } catch (Exception e) {
-            log.error("调用节假日 API 失败：{}", e.getMessage());
-            // API 调用失败时，默认使用周末判断
-            log.warn("使用备用方案：仅根据周末判断");
-            return false; // 假设不是节假日
-        }
-    }
-
-    /**
-     * 从响应中提取节日名称
-     */
-    private String extractFestivalName(String response) {
-        if (response == null || !response.contains("\"name\"")) {
-            return "未知节假日";
+        } catch (IOException e) {
+            log.error("检查节假日失败", e);
         }
 
-        int nameIndex = response.indexOf("\"name\"");
-        int startQuote = response.indexOf("\"", nameIndex + 7);
-        int endQuote = response.indexOf("\"", startQuote + 1);
-
-        if (startQuote > 0 && endQuote > startQuote) {
-            return response.substring(startQuote + 1, endQuote);
-        }
-
-        return "未知节假日";
-    }
-
-    /**
-     * 判断当前时间是否在交易时段内
-     * A 股交易时间：
-     * - 上午 9:30 - 11:30
-     * - 下午 13:00 - 15:00
-     *
-     * @return true-在交易时段内，false-不在交易时段内
-     */
-    private boolean isWithinTradingHours() {
-        LocalTime now = LocalTime.now();
-
-        // 上午交易时段 9:30 - 11:30
-        boolean morningSession = !now.isBefore(LocalTime.of(9, 30)) &&
-                !now.isAfter(LocalTime.of(11, 30));
-
-        // 下午交易时段 13:00 - 15:00
-        boolean afternoonSession = !now.isBefore(LocalTime.of(13, 0)) &&
-                !now.isAfter(LocalTime.of(15, 0));
-
-        return morningSession || afternoonSession;
+        log.info("今日是交易日：{}", date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        return true;
     }
 
     /**
