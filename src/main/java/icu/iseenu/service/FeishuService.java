@@ -9,7 +9,6 @@ import com.lark.oapi.service.im.v1.model.CreateMessageResp;
 import dev.langchain4j.model.chat.ChatModel;
 import icu.iseenu.agent.agent.SupervisorAgents;
 import icu.iseenu.agent.tool.assistant.StockAssistant;
-import icu.iseenu.entity.Stock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -126,15 +125,6 @@ public class FeishuService {
     }
 
     public void resolveEvent(String message) {
-        //todo 后续优化
-        if (message.contains("添加股票")) {
-            Stock stock = stockAssistant.extractStockFrom(message);
-            String chat = stockAssistant.chat(stock);
-            log.info("调用后chat:{}", chat);
-            sendMessage(chat);
-            return;
-        }
-//        supervisorAgents.chat(message);
         sendMarkdownMessage(supervisorAgents.chat(message));
     }
 }
