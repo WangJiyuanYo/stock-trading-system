@@ -1,9 +1,10 @@
-# Stock Trading System 📈
+# Auto Code Workspace 🤖
 
-一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析和微信推送功能。
----
+一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析、微信推送和飞书机器人功能。
 
-项目主要依靠Lingma 生成，以及手搓代码。
+> **项目说明**：本项目主要由 Lingma AI 辅助生成，结合手工编码完成。
+> 
+> **重要更新**（2026年4月20日）：已接入飞书机器人，后续可通过飞书机器人进行股票的增删改查操作，前端项目将不再持续更新。
 
 ## ✨ 功能特性
 
@@ -15,12 +16,14 @@
 - **定时任务**：自动在交易日获取股票数据并推送盈亏报告
 
 ### 🤖 AI Agent 能力
-- **智能助手**：基于 LangChain4j 和 DeepSeek AI 模型
+- **智能助手**：基于 LangChain4j 1.10.0 和 DeepSeek AI 模型
 - **节假日查询**：AI 自动从政府网站获取中国法定节假日信息
 - **文件操作**：AI 辅助写入和管理 JSON 数据文件
+- **多助手协同**：支持节假日助手、股票助手、文件写入助手等多种专业助手
 
 ### 📱 消息推送
 - **Server 酱集成**：支持微信消息推送
+- **飞书机器人**：支持飞书消息接收和推送
 - **日报推送**：每日自动推送持仓盈亏报告
 - **Markdown 格式**：美观的消息展示，包含个股详情和汇总统计
 
@@ -38,6 +41,7 @@
 - **Spring WebFlux**：响应式 HTTP 客户端
 - **LangChain4j 1.10.0**：AI Agent 框架
 - **DeepSeek AI**：大语言模型集成
+- **飞书 SDK 2.5.3**：飞书机器人集成
 - **Lombok**：简化 Java 代码
 - **Maven**：项目构建工具
 
@@ -52,19 +56,25 @@
 - **新浪股票 API**：实时行情数据
 - **Server 酱**：微信消息推送
 - **DeepSeek API**：AI 对话服务
+- **飞书开放平台**：机器人消息推送和接收
 
 ## 📦 项目结构
 
 ```
-stock-trading-system/
+autoCodeWorkspace/
 ├── src/main/java/icu/iseenu/
 │   ├── agent/                  # AI Agent 相关
-│   │   └── tool/              # Agent 工具类
+│   │   ├── agent/             # Supervisor Agents
+│   │   └── tool/assistant/    # Agent 工具类和助手
+│   │       ├── HolidayAssistant.java
+│   │       ├── StockAssistant.java
+│   │       └── WriteJsonFileAssistant.java
 │   ├── common/                # 通用类
 │   │   └── Result.java        # 统一返回结果封装
 │   ├── config/                # 配置类
 │   │   ├── AppConfig.java
 │   │   ├── CorsConfig.java    # 跨域配置
+│   │   ├── FeishuConfig.java  # 飞书配置
 │   │   └── WebConfig.java
 │   ├── controller/            # 控制器
 │   │   ├── AiController.java  # AI 相关接口
@@ -73,19 +83,23 @@ stock-trading-system/
 │   │   ├── Stock.java         # 股票实体
 │   │   └── StockMarketData.java # 行情数据实体
 │   ├── enums/                 # 枚举类
-│   │   └── StockTypeEnum.java # 股票类型枚举
+│   │   └── StockTypeEnum.java # 股票类型枚举（A股/港股/美股/英股/贵金属）
+│   ├── feishu/                # 飞书集成
+│   │   └── FeishuBotMessageReceiver.java # 飞书消息接收器
 │   ├── service/               # 服务层
 │   │   ├── ApiClientService.java
+│   │   ├── FeishuService.java     # 飞书服务
 │   │   ├── HolidayJsonService.java
 │   │   ├── JsonFileService.java
 │   │   ├── ServerChanService.java # 微信推送服务
-│   │   └── StockApiService.java   # 股票 API 服务
+│   │   ├── StockApiService.java   # 股票 API 服务
+│   │   └── StockService.java      # 股票管理服务
 │   ├── task/                  # 定时任务
 │   │   └── StockDataScheduledTask.java
 │   ├── util/                  # 工具类
 │   │   └── TradingDayUtil.java # 交易日判断工具
 │   └── DemoApplication.java   # 启动类
-├── frontend/                  # 前端项目
+├── frontend/                  # 前端项目（已停止更新）
 │   ├── src/
 │   │   ├── api/              # API 封装
 │   │   ├── components/       # 组件
@@ -95,8 +109,10 @@ stock-trading-system/
 ├── data/                      # 数据文件
 │   ├── calender/             # 节假日数据
 │   │   └── cn_holiday.json
-│   └── json/                 # 股票数据
-│       └── stocks.json
+│   ├── json/                 # 股票数据
+│   │   └── stocks.json
+│   └── rag/                  # RAG 相关数据
+│       └── cn_holiday.json
 └── pom.xml                    # Maven 配置
 ```
 
@@ -112,33 +128,76 @@ stock-trading-system/
 
 1. **克隆项目**
 ```bash
-git clone git@github.com:WangJiyuanYo/stock-trading-system.git
-cd stock-trading-system
+git clone git@github.com:WangJiyuanYo/autoCodeWorkspace.git
+cd autoCodeWorkspace
 ```
 
 2. **配置 application.yml**
+复制 `src/main/resources/application-example.yml` 为 `application.yml`，并修改以下配置项：
 ```yaml
-# 修改以下配置项
+# DeepSeek AI 配置
 langchain4j:
   open-ai:
     chat-model:
       api-key: your_deepseek_api_key  # 替换为你的 DeepSeek API Key
       
+# Server 酱微信推送配置
 serverchan:
   sendkey: your_serverchan_sendkey    # 替换为你的 Server 酱 SendKey
+
+# 飞书机器人配置
+feishu:
+  app-id: your_feishu_app_id          # 替换为你的飞书应用 App ID
+  app-secret: your_feishu_app_secret  # 替换为你的飞书应用 App Secret
 ```
 
 3. **编译运行**
+
+**方式一：使用 JAR 包运行**
 ```bash
 # 编译
 mvn clean package -DskipTests
 
 # 运行
 java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar
+```
 
-# 或使用 Maven 直接运行
+**方式二：使用 Maven 直接运行**
+```bash
 mvn spring-boot:run
 ```
+
+**方式三：使用 -D 参数传递配置（推荐用于生产环境）**
+
+通过 `-D` 参数直接在命令行中传递配置项，无需修改配置文件，更加安全灵活：
+
+```bash
+java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar \
+  -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key \
+  -Dserverchan.sendkey=your_serverchan_sendkey \
+  -Dfeishu.app-id=your_feishu_app_id \
+  -Dfeishu.app-secret=your_feishu_app_secret
+```
+
+**Windows PowerShell 环境下：**
+```powershell
+java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar `
+  -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key `
+  -Dserverchan.sendkey=your_serverchan_sendkey `
+  -Dfeishu.app-id=your_feishu_app_id `
+  -Dfeishu.app-secret=your_feishu_app_secret
+```
+
+**Maven 运行时使用 -D 参数：**
+```bash
+mvn spring-boot:run \
+  -Dspring-boot.run.jvmArguments="-Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key -Dserverchan.sendkey=your_serverchan_sendkey -Dfeishu.app-id=your_feishu_app_id -Dfeishu.app-secret=your_feishu_app_secret"
+```
+
+> **💡 提示**：
+> - 使用 `-D` 参数可以避免将敏感信息写入配置文件
+> - 可以结合环境变量使用，例如：`-Dlangchain4j.open-ai.chat-model.api-key=$DEEPSEEK_API_KEY`
+> - `-D` 参数的优先级高于 application.yml 中的配置
 
 后端服务将在 `http://localhost:8080` 启动
 
@@ -191,6 +250,12 @@ npm run dev
 |------|------|------|
 | POST | `/api/stocks/task/execute` | 手动执行定时任务 |
 
+### 飞书机器人接口
+
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | `/feishu/webhook` | 飞书机器人消息接收端点 |
+
 ### AI 接口
 
 | 方法 | 路径 | 描述 |
@@ -225,6 +290,11 @@ app:
 # Server 酱配置
 serverchan:
   sendkey: SCTxxxxx            # Server 酱 SendKey
+
+# 飞书机器人配置
+feishu:
+  app-id: cli_xxxxxxxxxxxxx    # 飞书应用 App ID
+  app-secret: xxxxxxxxxxxxxxx  # 飞书应用 App Secret
 ```
 
 ## 📊 数据格式
@@ -260,9 +330,10 @@ serverchan:
 
 ## 🔐 安全注意事项
 
-1. **不要提交敏感信息**：`.gitignore` 已配置忽略敏感文件
-2. **API Key 保护**：将 API Key 保存在环境变量或本地配置中
+1. **不要提交敏感信息**：`.gitignore` 已配置忽略 `application.yml` 等敏感文件
+2. **API Key 保护**：使用 `application-example.yml` 作为模板，真实配置保存在本地
 3. **跨域配置**：生产环境请调整 CORS 配置
+4. **飞书密钥管理**：妥善保管飞书 App ID 和 App Secret
 
 ## 📝 开发指南
 
@@ -302,6 +373,11 @@ java -version
 - 确认 Server 酱 SendKey 配置正确
 - 检查 Server 酱服务状态
 
+### 5. 飞书机器人无法接收消息
+- 确认飞书 App ID 和 App Secret 配置正确
+- 检查飞书应用权限设置
+- 验证 webhook 端点是否正确配置
+
 ## 📄 许可证
 
 本项目仅供学习和研究使用。
@@ -313,13 +389,19 @@ java -version
 ## 📧 联系方式
 
 - GitHub: [WangJiyuanYo](https://github.com/WangJiyuanYo)
-- 项目仓库: [stock-trading-system](https://github.com/WangJiyuanYo/stock-trading-system)
+- 项目仓库: [autoCodeWorkspace](https://github.com/WangJiyuanYo/autoCodeWorkspace)
 
 ## 📋 To-Do List
 
-- [ ] 集成飞书机器人 webhook，支持飞书消息推送
-- [ ] 使用 AI Agent 实现股票信息的智能添加和修改功能
-
+- [x] 基础股票管理系统
+- [x] 实时行情获取与盈亏计算
+- [x] Server 酱微信推送集成
+- [x] AI Agent 智能助手（节假日查询、股票信息查询）
+- [x] 飞书机器人 webhook 集成，支持飞书消息推送和接收
+- [x] 使用 AI Agent 实现股票信息的智能添加和修改功能
+- [ ] RAG 实现
+- [ ] 飞书机器人完整功能开发（通过飞书进行股票管理）
+- [ ] 前端界面优化（可选，因飞书机器人已替代大部分功能）
 ---
 
 ⭐ 如果这个项目对你有帮助，请给个 Star！

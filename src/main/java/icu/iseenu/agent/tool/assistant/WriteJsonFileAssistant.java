@@ -1,7 +1,6 @@
 package icu.iseenu.agent.tool.assistant;
 
 
-import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
@@ -26,7 +25,6 @@ public interface WriteJsonFileAssistant {
               - 返回工具的执行结果（true 或 false）
             """)
     @UserMessage("向{{pathEnv}}的{{fileName}}扩展名为{{extension}}写入{{input}}")
-    @Agent("你是一个助手，使用工具向指定路径写入文件内容")
     String writJsonFiles(@V("input") String input, @V("pathEnv") String pathEnv,
                          @V("fileName") String fileName, @V("extension") String extension);
 }

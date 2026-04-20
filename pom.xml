@@ -74,7 +74,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <!-- LangChain4j Agent 支持 (版本由 BOM 管理) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -91,6 +91,36 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- LangChain4j Easy RAG (包含文档解析和向量嵌入，约 65MB) -->
+        <!-- 如果不需要 RAG 功能，可以注释掉以下依赖以减小 Jar 包体积 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-easy-rag</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!--   飞书机器人的SDK     -->
+        <!-- Source: https://mvnrepository.com/artifact/com.larksuite.oapi/oapi-sdk -->
+        <dependency>
+            <groupId>com.larksuite.oapi</groupId>
+            <artifactId>oapi-sdk</artifactId>
+            <version>2.5.3</version>
+            <scope>compile</scope>
+        </dependency>
+
+
+        <dependency>
+            <artifactId>oapi-sdk-servlet-ext</artifactId>
+            <groupId>com.larksuite.oapi</groupId>
+            <version>1.0.0-rc3</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>oapi-sdk</artifactId>
+                    <groupId>com.larksuite.oapi</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

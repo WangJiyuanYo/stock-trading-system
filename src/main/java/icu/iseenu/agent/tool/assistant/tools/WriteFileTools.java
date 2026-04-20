@@ -1,4 +1,4 @@
-package icu.iseenu.agent.tool;
+package icu.iseenu.agent.tool.assistant.tools;
 
 
 import dev.langchain4j.agent.tool.Tool;

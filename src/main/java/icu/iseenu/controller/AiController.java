@@ -35,7 +35,7 @@ public class AiController {
 
     @GetMapping("/fetch-holiday")
     public String fetchHoliday(@RequestParam String year) {
-        if ("".equals(year) || Integer.parseInt(year) < 1900) {
+        if ("".equals(year) || Integer.parseInt(year) < 2025) {
             return "请输入正确的年份";
         }
         String fetchHoliday = holidayAssistant.fetchHoliday(year);

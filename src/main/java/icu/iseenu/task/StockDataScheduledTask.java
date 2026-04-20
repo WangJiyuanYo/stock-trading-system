@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * 股票数据定时任务
- * 每个交易??15:01 自动获取所有持仓股票的行情数据并计算盈??
+ * 每个交易15:01 自动获取所有持仓股票的行情数据并计算盈??
  */
 @Component
 public class StockDataScheduledTask {
@@ -65,7 +65,7 @@ public class StockDataScheduledTask {
 
         // 判断是否为交易日
         if (!tradingDayUtil.isTradingDay()) {
-            log.warn("今日??A 股交易日，跳过执");
+            log.warn("今日非A 股交易日，跳过执行");
             return;
         }
 
