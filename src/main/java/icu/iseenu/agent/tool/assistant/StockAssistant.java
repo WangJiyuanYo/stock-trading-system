@@ -11,13 +11,13 @@ import icu.iseenu.entity.Stock;
         tools = {"StockTools"}
 )
 public interface StockAssistant {
-    @UserMessage("""
-            根据用户输入,调用工具进行操作 {{stock}}
-            执行流程如下:
-            1. 添加或者修改股票,调用 writeJson ,如果工具返回的是true 则返回*保存成功*否则返回*保存失败*
-            2. 删除股票 调用 deleteJson 如果工具返回的是true 则返回 **删除成功** 否则返回 **删除失败**
-            """)
-    String chat(@V("stock") Stock stock);
+//    @UserMessage("""
+//            根据用户输入,调用工具进行操作 {{stock}}
+//            执行流程如下:
+//            1. 添加或者修改股票,调用 writeJson ,如果工具返回的是true 则返回*保存成功*否则返回*保存失败*
+//            2. 删除股票 调用 deleteJson 如果工具返回的是true 则返回 **删除成功** 否则返回 **删除失败**
+//            """)
+//    String chat(@V("stock") Stock stock);
 
 
     @SystemMessage("""
