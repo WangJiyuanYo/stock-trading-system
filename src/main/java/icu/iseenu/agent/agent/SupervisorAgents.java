@@ -3,6 +3,7 @@ package icu.iseenu.agent.agent;
 
 import dev.langchain4j.agentic.declarative.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;
 import icu.iseenu.agent.tool.assistant.HolidayAssistant;
@@ -12,7 +13,7 @@ import icu.iseenu.agent.tool.assistant.WriteJsonFileAssistant;
 /**
  * 封装的AI调用类,通过这个方法调用内部工具
  */
-@AiService
+@AiService(chatMemoryProvider = "chatMemoryProvider")
 public interface SupervisorAgents {
     @SupervisorAgent(
             subAgents = {HolidayAssistant.class, StockAssistant.class, WriteJsonFileAssistant.class},
@@ -24,5 +25,5 @@ public interface SupervisorAgents {
                     如果用户需要查询节假日信息，请使用 HolidayAssistant。
                     如果用户需要写入文件，请使用WriteJsonFileAssistant。
                     """)
-    String chat(@UserMessage String userMessage);
+    String chat(@MemoryId String memoryId, @UserMessage String userMessage);
 }

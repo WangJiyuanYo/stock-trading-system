@@ -6,11 +6,8 @@ import com.lark.oapi.core.utils.Jsons;
 import com.lark.oapi.service.im.v1.model.CreateMessageReq;
 import com.lark.oapi.service.im.v1.model.CreateMessageReqBody;
 import com.lark.oapi.service.im.v1.model.CreateMessageResp;
-import dev.langchain4j.model.chat.ChatModel;
 import icu.iseenu.agent.agent.SupervisorAgents;
-import icu.iseenu.agent.tool.assistant.StockAssistant;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -20,50 +17,14 @@ import java.util.UUID;
 @Service
 public class FeishuService {
 
-    @Autowired
-    private Client client;
 
-    @Autowired
-    private ChatModel model;
+    private final Client client;
 
-    @Autowired
-    private StockAssistant stockAssistant;
-    @Autowired
-    private StockService stockService;
+    private final SupervisorAgents supervisorAgents;
 
-    @Autowired
-    private SupervisorAgents supervisorAgents;
-
-    public void sendMessage(String message) {
-
-        String sendMessage = "{\"text\":\"" + message + "\"}";
-        // 发送飞书消息
-
-        // 创建请求对象
-        CreateMessageReq req = CreateMessageReq.newBuilder()
-                .createMessageReqBody(CreateMessageReqBody.newBuilder()
-                        .receiveId("ou_53664bb23dc360895313160f650ffee6")
-                        .msgType("text")
-                        .content(sendMessage)
-                        .uuid(UUID.randomUUID().toString())
-                        .build())
-                .receiveIdType("open_id")
-                .build();
-        try {
-            // 发起请求
-            CreateMessageResp resp = client.im().v1().message().create(req);
-
-            if (!resp.success()) {
-                log.error("code:{},msg:{},reqId:{}, resp:{}",
-                        resp.getCode(), resp.getMsg(), resp.getRequestId(), Jsons.createGSON(true, false).toJson(JsonParser.parseString(new String(resp.getRawResponse().getBody(), StandardCharsets.UTF_8))));
-                return;
-            }
-
-            // 业务数据处理
-            System.out.println(Jsons.DEFAULT.toJson(resp.getData()));
-        } catch (Exception e) {
-
-        }
+    public FeishuService(Client client, SupervisorAgents supervisorAgents) {
+        this.client = client;
+        this.supervisorAgents = supervisorAgents;
     }
 
     /**
@@ -71,7 +32,7 @@ public class FeishuService {
      *
      * @param markdownContent Markdown内容
      */
-    public void sendMarkdownMessage(String markdownContent) {
+    public void sendMarkdownMessage(String senderId, String markdownContent) {
         // 使用interactive卡片消息类型,支持更好的富文本展示
         // 将markdown转换为纯文本,保留基本格式
         String textContent = markdownContent.replace("# ", "").replace("## ", "").replace("|", "");
@@ -100,7 +61,7 @@ public class FeishuService {
         // 创建请求对象
         CreateMessageReq req = CreateMessageReq.newBuilder()
                 .createMessageReqBody(CreateMessageReqBody.newBuilder()
-                        .receiveId("ou_53664bb23dc360895313160f650ffee6")
+                        .receiveId(senderId)
                         .msgType("interactive")
                         .content(content)
                         .uuid(UUID.randomUUID().toString())
@@ -124,7 +85,13 @@ public class FeishuService {
         }
     }
 
-    public void resolveEvent(String message) {
-        sendMarkdownMessage(supervisorAgents.chat(message));
+    /**
+     * 处理飞书接收到的消息
+     *
+     * @param chatId  会话ID
+     * @param message 消息内容
+     */
+    public void resolveEvent(String chatId, String senderId, String message) {
+        sendMarkdownMessage(senderId, supervisorAgents.chat(chatId, message));
     }
 }

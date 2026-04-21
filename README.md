@@ -3,12 +3,13 @@
 一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析、微信推送和飞书机器人功能。
 
 > **项目说明**：本项目主要由 Lingma AI 辅助生成，结合手工编码完成。
-> 
+>
 > **重要更新**（2026年4月20日）：已接入飞书机器人，后续可通过飞书机器人进行股票的增删改查操作，前端项目将不再持续更新。
 
 ## ✨ 功能特性
 
 ### 🎯 核心功能
+
 - **股票管理**：支持 A 股、港股、美股、英股、贵金属等多种类型股票的增删改查
 - **实时行情**：通过新浪 API 获取实时股票行情数据
 - **盈亏计算**：自动计算持仓股票的当日盈亏和总盈亏
@@ -16,18 +17,21 @@
 - **定时任务**：自动在交易日获取股票数据并推送盈亏报告
 
 ### 🤖 AI Agent 能力
+
 - **智能助手**：基于 LangChain4j 1.10.0 和 DeepSeek AI 模型
 - **节假日查询**：AI 自动从政府网站获取中国法定节假日信息
 - **文件操作**：AI 辅助写入和管理 JSON 数据文件
 - **多助手协同**：支持节假日助手、股票助手、文件写入助手等多种专业助手
 
 ### 📱 消息推送
+
 - **Server 酱集成**：支持微信消息推送
 - **飞书机器人**：支持飞书消息接收和推送
 - **日报推送**：每日自动推送持仓盈亏报告
 - **Markdown 格式**：美观的消息展示，包含个股详情和汇总统计
 
 ### 🌐 前端界面
+
 - **Vue 3 + Vite**：现代化的前端技术栈
 - **Element Plus**：优雅的 UI 组件库
 - **ECharts**：数据可视化，盈亏饼图展示
@@ -36,6 +40,7 @@
 ## 🛠️ 技术栈
 
 ### 后端
+
 - **Java 17**
 - **Spring Boot 3.3.6**
 - **Spring WebFlux**：响应式 HTTP 客户端
@@ -46,6 +51,7 @@
 - **Maven**：项目构建工具
 
 ### 前端
+
 - **Vue 3.5.30**
 - **Vite 8.0.1**
 - **Element Plus 2.13.6**
@@ -53,6 +59,7 @@
 - **Axios 1.13.6**
 
 ### 外部 API
+
 - **新浪股票 API**：实时行情数据
 - **Server 酱**：微信消息推送
 - **DeepSeek API**：AI 对话服务
@@ -119,6 +126,7 @@ autoCodeWorkspace/
 ## 🚀 快速开始
 
 ### 环境要求
+
 - JDK 17+
 - Maven 3.6+
 - Node.js 16+
@@ -127,20 +135,22 @@ autoCodeWorkspace/
 ### 后端启动
 
 1. **克隆项目**
+
 ```bash
 git clone git@github.com:WangJiyuanYo/autoCodeWorkspace.git
 cd autoCodeWorkspace
 ```
 
 2. **配置 application.yml**
-复制 `src/main/resources/application-example.yml` 为 `application.yml`，并修改以下配置项：
+   复制 `src/main/resources/application-example.yml` 为 `application.yml`，并修改以下配置项：
+
 ```yaml
 # DeepSeek AI 配置
 langchain4j:
   open-ai:
     chat-model:
       api-key: your_deepseek_api_key  # 替换为你的 DeepSeek API Key
-      
+
 # Server 酱微信推送配置
 serverchan:
   sendkey: your_serverchan_sendkey    # 替换为你的 Server 酱 SendKey
@@ -154,6 +164,7 @@ feishu:
 3. **编译运行**
 
 **方式一：使用 JAR 包运行**
+
 ```bash
 # 编译
 mvn clean package -DskipTests
@@ -163,6 +174,7 @@ java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar
 ```
 
 **方式二：使用 Maven 直接运行**
+
 ```bash
 mvn spring-boot:run
 ```
@@ -180,6 +192,7 @@ java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar \
 ```
 
 **Windows PowerShell 环境下：**
+
 ```powershell
 java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar `
   -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key `
@@ -189,6 +202,7 @@ java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar `
 ```
 
 **Maven 运行时使用 -D 参数：**
+
 ```bash
 mvn spring-boot:run \
   -Dspring-boot.run.jvmArguments="-Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key -Dserverchan.sendkey=your_serverchan_sendkey -Dfeishu.app-id=your_feishu_app_id -Dfeishu.app-secret=your_feishu_app_secret"
@@ -204,16 +218,19 @@ mvn spring-boot:run \
 ### 前端启动
 
 1. **进入前端目录**
+
 ```bash
 cd frontend
 ```
 
 2. **安装依赖**
+
 ```bash
 npm install
 ```
 
 3. **启动开发服务器**
+
 ```bash
 npm run dev
 ```
@@ -224,42 +241,42 @@ npm run dev
 
 ### 股票管理接口
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/stocks` | 获取所有股票列表 |
-| GET | `/api/stocks/{stockCode}` | 根据代码获取股票 |
-| POST | `/api/stocks` | 添加股票 |
-| PUT | `/api/stocks/{stockCode}` | 更新股票 |
-| DELETE | `/api/stocks/{stockCode}` | 删除股票 |
-| GET | `/api/stocks/{stockCode}/exists` | 检查股票是否存在 |
-| POST | `/api/stocks/batch` | 批量保存股票 |
+| 方法     | 路径                               | 描述       |
+|--------|----------------------------------|----------|
+| GET    | `/api/stocks`                    | 获取所有股票列表 |
+| GET    | `/api/stocks/{stockCode}`        | 根据代码获取股票 |
+| POST   | `/api/stocks`                    | 添加股票     |
+| PUT    | `/api/stocks/{stockCode}`        | 更新股票     |
+| DELETE | `/api/stocks/{stockCode}`        | 删除股票     |
+| GET    | `/api/stocks/{stockCode}/exists` | 检查股票是否存在 |
+| POST   | `/api/stocks/batch`              | 批量保存股票   |
 
 ### 行情数据接口
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | `/api/stocks/market-data/all` | 获取所有股票行情 |
-| GET | `/api/stocks/market-data/{stockCode}` | 获取单只股票行情 |
-| POST | `/api/stocks/market-data/batch` | 批量获取行情 |
-| GET | `/api/stocks/profit-loss/summary` | 获取盈亏汇总 |
-| GET | `/api/stocks/profit-loss/overview` | 获取盈亏概览 |
+| 方法   | 路径                                    | 描述       |
+|------|---------------------------------------|----------|
+| GET  | `/api/stocks/market-data/all`         | 获取所有股票行情 |
+| GET  | `/api/stocks/market-data/{stockCode}` | 获取单只股票行情 |
+| POST | `/api/stocks/market-data/batch`       | 批量获取行情   |
+| GET  | `/api/stocks/profit-loss/summary`     | 获取盈亏汇总   |
+| GET  | `/api/stocks/profit-loss/overview`    | 获取盈亏概览   |
 
 ### 定时任务接口
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
+| 方法   | 路径                         | 描述       |
+|------|----------------------------|----------|
 | POST | `/api/stocks/task/execute` | 手动执行定时任务 |
 
 ### 飞书机器人接口
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
+| 方法   | 路径                | 描述          |
+|------|-------------------|-------------|
 | POST | `/feishu/webhook` | 飞书机器人消息接收端点 |
 
 ### AI 接口
 
-| 方法 | 路径 | 描述 |
-|------|------|------|
+| 方法  | 路径                                  | 描述                      |
+|-----|-------------------------------------|-------------------------|
 | GET | `/api/ai/fetch-holiday?year={year}` | AI 获取指定年份节假日并写入 JSON 文件 |
 
 ## 🔧 配置说明
@@ -300,6 +317,7 @@ feishu:
 ## 📊 数据格式
 
 ### 股票数据 (stocks.json)
+
 ```json
 [
   {
@@ -312,17 +330,33 @@ feishu:
 ```
 
 ### 节假日数据 (cn_holiday.json)
+
 ```json
 {
-  "1": [1],
-  "5": [1, 2, 3],
-  "10": [1, 2, 3, 4, 5, 6, 7]
+  "1": [
+    1
+  ],
+  "5": [
+    1,
+    2,
+    3
+  ],
+  "10": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ]
 }
 ```
 
 ## 🎨 界面预览
 
 前端提供友好的用户界面，包括：
+
 - 📋 股票列表管理
 - 📈 实时行情展示
 - 🥧 盈亏分布饼图
@@ -338,17 +372,21 @@ feishu:
 ## 📝 开发指南
 
 ### 添加新股票类型
+
 1. 在 `StockTypeEnum.java` 中添加新枚举
 2. 更新前端下拉选项
 3. 测试验证
 
 ### 自定义定时任务
+
 修改 `StockDataScheduledTask.java` 中的 `@Scheduled` 注解：
+
 ```java
 @Scheduled(cron = "0 0 15 * * MON-FRI") // 每个交易日下午 3 点
 ```
 
 ### 扩展 AI 功能
+
 1. 创建新的 Tool 类
 2. 定义 Assistant 接口
 3. 在 Controller 中暴露接口
@@ -356,24 +394,30 @@ feishu:
 ## 🐛 常见问题
 
 ### 1. 编译错误
+
 确保使用 JDK 17：
+
 ```bash
 java -version
 ```
 
 ### 2. 跨域问题
+
 检查 `CorsConfig.java` 配置是否正确
 
 ### 3. API 调用失败
+
 - 检查网络连接
 - 验证 API Key 是否有效
 - 查看日志输出
 
 ### 4. 微信推送失败
+
 - 确认 Server 酱 SendKey 配置正确
 - 检查 Server 酱服务状态
 
 ### 5. 飞书机器人无法接收消息
+
 - 确认飞书 App ID 和 App Secret 配置正确
 - 检查飞书应用权限设置
 - 验证 webhook 端点是否正确配置
@@ -400,10 +444,14 @@ java -version
 - [x] 飞书机器人 webhook 集成，支持飞书消息推送和接收
 - [x] 使用 AI Agent 实现股票信息的智能添加和修改功能
 - [ ] RAG 实现
-- [ ] 飞书机器人完整功能开发（通过飞书进行股票管理）
+- [x] 飞书机器人完整功能开发（通过飞书进行股票管理）
 - [ ] 前端界面优化（可选，因飞书机器人已替代大部分功能）
-- [ ] SupervisorAgents 增加对话历史记忆功能，支持上下文理解和多轮对话
+- [x] SupervisorAgents 增加对话历史记忆功能，支持上下文理解和多轮对话
 - [ ] Readme 增加预览图
+- [ ] 增加Skills
+- [ ] 使用体验优化
+- [ ] Agent 调用接口
+
 ---
 ---
 

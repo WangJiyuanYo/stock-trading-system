@@ -48,6 +48,15 @@ public class FeishuBotMessageReceiver {
                             return;
                         }
 
+                        //抛弃过期消息，防止消耗Token
+                        String createTime = event.getEvent().getMessage().getCreateTime();
+                        long timestamp = Long.parseLong(createTime);
+                        long currentTimeMillis = System.currentTimeMillis();
+                        if (currentTimeMillis - timestamp > MESSAGE_CACHE_EXPIRE_MS) {
+                            log.info("过期消息 :{} ", Jsons.DEFAULT.toJson(event.getEvent()));
+                            return;
+                        }
+
                         log.info("[ onP2MessageReceiveV1 access ], messageId: {}, data: {}",
                                 messageId, Jsons.DEFAULT.toJson(event.getEvent()));
 
@@ -55,7 +64,7 @@ public class FeishuBotMessageReceiver {
                         PROCESSED_MESSAGES.add(messageId);
 
                         try {
-                            feishuService.resolveEvent(event.getEvent().getMessage().getContent());
+                            feishuService.resolveEvent(event.getEvent().getMessage().getChatId(), event.getEvent().getSender().getSenderId().getOpenId(), event.getEvent().getMessage().getContent());
                         } catch (Exception e) {
                             log.error("Error processing message: {}", e.getMessage(), e);
                         }
@@ -109,5 +118,6 @@ public class FeishuBotMessageReceiver {
             }
         }, "feishu-message-cache-cleanup").start();
     }
+
 
 }
