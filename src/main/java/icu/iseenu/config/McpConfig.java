@@ -1,0 +1,42 @@
+package icu.iseenu.config;
+
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
+import java.util.List;
+
+@Configuration
+@Slf4j
+public class McpConfig {
+
+    @Bean
+    public McpClient mcpClient() {
+        log.info("正在初始化 MCP 客户端...");
+
+        StreamableHttpMcpTransport mcpTransport = StreamableHttpMcpTransport.builder()
+                .url("https://pmcp-server.us-east.true-mcp.com/mcp")
+                .build();
+
+        return DefaultMcpClient.builder()
+                .key("mcp-echo-server")
+                .transport(mcpTransport)
+                .initializationTimeout(Duration.ofSeconds(60))
+                .build();
+    }
+
+    @Bean
+    public McpToolProvider mcpToolProvider(List<McpClient> mcpClients) {
+        log.info("正在创建 MCP ToolProvider...");
+        return McpToolProvider.builder()
+                .mcpClients(mcpClients)
+                .build();
+    }
+
+
+}
