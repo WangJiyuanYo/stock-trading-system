@@ -36,8 +36,8 @@ public class StockTools {
 
             // 构建Markdown表格
             StringBuilder markdown = new StringBuilder();
-            markdown.append("| 股票名称 | 持仓价格 | 当前价格 | 浮盈 |\n");
-            markdown.append("|---------|---------|---------|------|\n");
+            markdown.append("| 股票名称 | 持仓价格 | 持仓数量 | 当前价格 | 浮盈 |\n");
+            markdown.append("|---------|---------|---------|---------|------|\n");
 
             for (icu.iseenu.entity.StockMarketData data : marketDataList) {
                 String name = data.getName() != null ? data.getName() : "未知";
@@ -46,6 +46,12 @@ public class StockTools {
                 String holdingPrice = "-";
                 if (data.getHoldingPrice() != null) {
                     holdingPrice = String.format("%.2f", data.getHoldingPrice());
+                }
+
+                // 持仓数量
+                String holdingQuantity = "-";
+                if (data.getHoldingQuantity() != null) {
+                    holdingQuantity = String.valueOf(data.getHoldingQuantity());
                 }
 
                 // 当前价格
@@ -66,7 +72,7 @@ public class StockTools {
                     profit = sign + String.format("%.2f", profitValue);
                 }
 
-                markdown.append(String.format("| %s | %s | %s | %s |\n", name, holdingPrice, currentPrice, profit));
+                markdown.append(String.format("| %s | %s | %s | %s | %s |\n", name, holdingPrice, holdingQuantity, currentPrice, profit));
             }
 
             String result = markdown.toString();

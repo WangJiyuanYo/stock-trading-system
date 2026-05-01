@@ -8,7 +8,8 @@ import dev.langchain4j.service.spring.AiService;
 import icu.iseenu.entity.Stock;
 
 @AiService(
-        tools = {"StockTools"}
+        tools = {"StockTools"},
+        toolProvider = "skills"
 )
 public interface StockAssistant {
     @SystemMessage("""

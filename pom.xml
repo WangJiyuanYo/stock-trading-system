@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.6</version>
+        <version>3.4.13</version>
         <relativePath/>
     </parent>
 
@@ -33,7 +33,7 @@
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-bom</artifactId>
-                <version>1.10.0</version>
+                <version>${langchain4j.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -60,21 +60,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Spring Boot DevTools (开发工具，可选) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Spring Boot Starter Test -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- LangChain4j Agent 支持 (版本由 BOM 管理) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -95,11 +80,11 @@
 
         <!-- LangChain4j Easy RAG (包含文档解析和向量嵌入，约 65MB) -->
         <!-- 如果不需要 RAG 功能，可以注释掉以下依赖以减小 Jar 包体积 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-easy-rag</artifactId>
-            <scope>compile</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>dev.langchain4j</groupId>-->
+<!--            <artifactId>langchain4j-easy-rag</artifactId>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
 
         <!--   飞书机器人的SDK     -->
         <!-- Source: https://mvnrepository.com/artifact/com.larksuite.oapi/oapi-sdk -->
@@ -126,6 +111,13 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-mcp</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- langchian4j skills -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-skills</artifactId>
         </dependency>
     </dependencies>
 
