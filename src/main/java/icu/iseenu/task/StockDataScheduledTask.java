@@ -1,7 +1,7 @@
 package icu.iseenu.task;
 
 import icu.iseenu.entity.StockMarketData;
-import icu.iseenu.service.ServerChanService;
+import icu.iseenu.service.NotificationService;
 import icu.iseenu.service.StockApiService;
 import icu.iseenu.util.TradingDayUtil;
 import org.slf4j.Logger;
@@ -25,14 +25,14 @@ public class StockDataScheduledTask {
     private static final Logger log = LoggerFactory.getLogger(StockDataScheduledTask.class);
 
     private final StockApiService stockApiService;
-    private final ServerChanService serverChanService;
+    private final NotificationService notificationService;
     private final TradingDayUtil tradingDayUtil;
 
     public StockDataScheduledTask(StockApiService stockApiService,
-                                  ServerChanService serverChanService,
+                                  NotificationService notificationService,
                                   TradingDayUtil tradingDayUtil) {
         this.stockApiService = stockApiService;
-        this.serverChanService = serverChanService;
+        this.notificationService = notificationService;
         this.tradingDayUtil = tradingDayUtil;
     }
 
@@ -84,40 +84,26 @@ public class StockDataScheduledTask {
             log.info("获取??{} 只股票的数据", marketDataList.size());
 
             for (StockMarketData data : marketDataList) {
-                String stockName = data.getName();
                 BigDecimal todayProfitLoss = data.getTodayProfitLoss();
 
                 if (todayProfitLoss != null) {
                     totalTodayProfitLoss = totalTodayProfitLoss.add(todayProfitLoss);
-                      } else {
+                } else {
+                    log.warn("股票 {} 的盈亏数据为空", data.getName());
                 }
             }
 
+            // 构建消息标题
+            String title = buildTitle(totalTodayProfitLoss);
+            
             // 构建个股详情字符串
-            StringBuilder stockDetails = new StringBuilder();
-            for (int i = 0; i < marketDataList.size(); i++) {
-                StockMarketData data = marketDataList.get(i);
-                BigDecimal profit = data.getTodayProfitLoss();
-                if (profit != null) {
-                    stockDetails.append(String.format("%s: %s %.2f 元\n\n",
-                            data.getName(),
-                            profit.compareTo(BigDecimal.ZERO) >= 0 ? "✅" : "❌",
-                            profit));
-                }
-            }
+            String stockDetails = buildStockDetails(marketDataList);
             
-            // 发送微信推送
-            boolean sent = serverChanService.sendStockDailyReport(
-                    marketDataList.size(),
-                    totalTodayProfitLoss.doubleValue(),
-                    stockDetails.toString()
-            );
+            // 构建消息内容
+            String message = buildDesp(marketDataList.size(), totalTodayProfitLoss, stockDetails);
             
-            if (sent) {
-                log.info("微信推送成功✅");
-            } else {
-                log.warn("微信推送失败或已禁用⚠️");
-            }
+            // 发送通知推送
+            sendNotification(title, message);
 
             log.info("========== 定时任务执行完成 ==========");
 
@@ -182,30 +168,17 @@ public class StockDataScheduledTask {
                 log.info("今日表现：持平➖");
             }
         
+            // 构建消息标题
+            String title = buildTitle(totalTodayProfitLoss);
+            
             // 构建个股详情字符串
-            StringBuilder stockDetails = new StringBuilder();
-            for (StockMarketData data : marketDataList) {
-                BigDecimal profit = data.getTodayProfitLoss();
-                if (profit != null) {
-                    stockDetails.append(String.format("%s: %s %.2f 元\n\n",
-                            data.getName(),
-                            profit.compareTo(BigDecimal.ZERO) >= 0 ? "✅" : "❌",
-                            profit));
-                }
-            }
-        
-            // 发送微信推送
-            boolean sent = serverChanService.sendStockDailyReport(
-                    marketDataList.size(),
-                    totalTodayProfitLoss.doubleValue(),
-                    stockDetails.toString()
-            );
-        
-            if (sent) {
-                log.info("微信推送成功✅");
-            } else {
-                log.warn("微信推送失败或已禁用⚠️");
-            }
+            String stockDetails = buildStockDetails(marketDataList);
+            
+            // 构建消息内容
+            String message = buildDesp(marketDataList.size(), totalTodayProfitLoss, stockDetails);
+            
+            // 发送通知推送
+            sendNotification(title, message);
         
             log.info("========== 手动任务执行完成 ==========");
         
@@ -220,5 +193,79 @@ public class StockDataScheduledTask {
             log.error("执行股票数据手动任务发生异常：{}", e.getMessage(), e);
             return "执行异常: " + e.getMessage();
         }
+    }
+
+    /**
+     * 构建消息标题
+     */
+    private String buildTitle(BigDecimal totalProfitLoss) {
+        String emoji;
+        if (totalProfitLoss.compareTo(BigDecimal.ZERO) > 0) {
+            emoji = "📈";
+        } else if (totalProfitLoss.compareTo(BigDecimal.ZERO) < 0) {
+            emoji = "📉";
+        } else {
+            emoji = "➖";
+        }
+        
+        String profitText = totalProfitLoss.compareTo(BigDecimal.ZERO) > 0 ? "盈利" : 
+                           (totalProfitLoss.compareTo(BigDecimal.ZERO) < 0 ? "亏损" : "持平");
+        return String.format("%s 股票日报 - 今日%s %.2f 元", emoji, profitText, totalProfitLoss.abs().doubleValue());
+    }
+
+    /**
+     * 构建个股详情字符串
+     */
+    private String buildStockDetails(List<StockMarketData> marketDataList) {
+        StringBuilder stockDetails = new StringBuilder();
+        for (StockMarketData data : marketDataList) {
+            BigDecimal profit = data.getTodayProfitLoss();
+            if (profit != null) {
+                stockDetails.append(String.format("%s: %s %.2f 元\n\n",
+                        data.getName(),
+                        profit.compareTo(BigDecimal.ZERO) >= 0 ? "✅" : "❌",
+                        profit));
+            }
+        }
+        return stockDetails.toString();
+    }
+
+    /**
+     * 发送通知
+     */
+    private void sendNotification(String title, String message) {
+        try {
+            notificationService.sendAlert(title, message);
+            log.info("通知推送成功✅");
+        } catch (Exception e) {
+            log.error("通知推送失败❌: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 构建消息内容（Markdown 格式）
+     */
+    private String buildDesp(int stockCount, BigDecimal totalProfitLoss, String stockDetails) {
+        StringBuilder desp = new StringBuilder();
+        
+        // 汇总信息
+        desp.append("## 📊 今日持仓概览\n\n");
+        desp.append(String.format("**持仓股票数**: %d 只\n", stockCount));
+        desp.append(String.format("**今日盈亏**: %s %.2f 元\n\n", 
+                totalProfitLoss.compareTo(BigDecimal.ZERO) >= 0 ? "✅" : "❌", totalProfitLoss.doubleValue()));
+        
+        // 明细信息
+        if (stockDetails != null && !stockDetails.trim().isEmpty()) {
+            desp.append("## 📝 个股详情\n\n");
+            desp.append(stockDetails);
+        }
+        
+        // 时间戳
+        desp.append("\n\n---\n");
+        desp.append(String.format("*推送时间*: %s", 
+                LocalDateTime.now().format(
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))));
+        
+        return desp.toString();
     }
 }

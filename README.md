@@ -1,6 +1,6 @@
-# Auto Code Workspace 🤖
+# Stock Trading System 📈
 
-一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析、微信推送和飞书机器人功能。
+一个基于 Spring Boot 和 Vue 3 的智能股票交易系统，集成 AI Agent、实时行情获取、盈亏分析、多渠道消息推送（Server酱、NotifyMe）和飞书机器人功能。
 
 > **项目说明**：本项目主要由 Lingma AI 辅助生成，结合手工编码完成。
 >
@@ -26,7 +26,9 @@
 ### 📱 消息推送
 
 - **Server 酱集成**：支持微信消息推送
+- **NotifyMe 集成**：支持 Android 手机通知推送
 - **飞书机器人**：支持飞书消息接收和推送
+- **多渠道支持**：可同时启用多个通知渠道
 - **日报推送**：每日自动推送持仓盈亏报告
 - **Markdown 格式**：美观的消息展示，包含个股详情和汇总统计
 
@@ -62,6 +64,7 @@
 
 - **新浪股票 API**：实时行情数据
 - **Server 酱**：微信消息推送
+- **NotifyMe**：Android 通知推送
 - **DeepSeek API**：AI 对话服务
 - **飞书开放平台**：机器人消息推送和接收
 
@@ -93,12 +96,18 @@ autoCodeWorkspace/
 │   │   └── StockTypeEnum.java # 股票类型枚举（A股/港股/美股/英股/贵金属）
 │   ├── feishu/                # 飞书集成
 │   │   └── FeishuBotMessageReceiver.java # 飞书消息接收器
+│   ├── notify/                # 通知系统
+│   │   ├── NotificationSender.java      # 通知发送器接口
+│   │   └── impl/                        # 通知实现
+│   │       ├── ServerChanNotifier.java  # Server 酱实现
+│   │       └── NotifyMeNotifier.java    # NotifyMe 实现
 │   ├── service/               # 服务层
 │   │   ├── ApiClientService.java
+│   │   ├── CompositeNotificationSender.java # 复合通知发送器
 │   │   ├── FeishuService.java     # 飞书服务
 │   │   ├── HolidayJsonService.java
 │   │   ├── JsonFileService.java
-│   │   ├── ServerChanService.java # 微信推送服务
+│   │   ├── NotificationService.java     # 通知服务
 │   │   ├── StockApiService.java   # 股票 API 服务
 │   │   └── StockService.java      # 股票管理服务
 │   ├── task/                  # 定时任务
@@ -151,9 +160,13 @@ langchain4j:
     chat-model:
       api-key: your_deepseek_api_key  # 替换为你的 DeepSeek API Key
 
-# Server 酱微信推送配置
-serverchan:
-  sendkey: your_serverchan_sendkey    # 替换为你的 Server 酱 SendKey
+# 通知渠道配置
+notification:
+  enabled-channels: serverchan,notifyme  # 启用的通知渠道（逗号分隔）
+  serverchan:
+    sckey: your_serverchan_sendkey       # Server 酱 SendKey
+  notifyme:
+    uuid: your_notifyme_uuid             # NotifyMe UUID
 
 # 飞书机器人配置
 feishu:
@@ -186,7 +199,8 @@ mvn spring-boot:run
 ```bash
 java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar \
   -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key \
-  -Dserverchan.sendkey=your_serverchan_sendkey \
+  -Dnotification.serverchan.sckey=your_serverchan_sendkey \
+  -Dnotification.notifyme.uuid=your_notifyme_uuid \
   -Dfeishu.app-id=your_feishu_app_id \
   -Dfeishu.app-secret=your_feishu_app_secret
 ```
@@ -196,7 +210,8 @@ java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar \
 ```powershell
 java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar `
   -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key `
-  -Dserverchan.sendkey=your_serverchan_sendkey `
+  -Dnotification.serverchan.sckey=your_serverchan_sendkey `
+  -Dnotification.notifyme.uuid=your_notifyme_uuid `
   -Dfeishu.app-id=your_feishu_app_id `
   -Dfeishu.app-secret=your_feishu_app_secret
 ```
@@ -205,7 +220,7 @@ java -jar target/autoCodeWorkspace-0.0.1-SNAPSHOT.jar `
 
 ```bash
 mvn spring-boot:run \
-  -Dspring-boot.run.jvmArguments="-Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key -Dserverchan.sendkey=your_serverchan_sendkey -Dfeishu.app-id=your_feishu_app_id -Dfeishu.app-secret=your_feishu_app_secret"
+  -Dspring-boot.run.jvmArguments="-Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key -Dnotification.serverchan.sckey=your_serverchan_sendkey -Dnotification.notifyme.uuid=your_notifyme_uuid -Dfeishu.app-id=your_feishu_app_id -Dfeishu.app-secret=your_feishu_app_secret"
 ```
 
 > **💡 提示**：
@@ -308,9 +323,13 @@ app:
     calender:
       path: ./data/calender
 
-# Server 酱配置
-serverchan:
-  sendkey: SCTxxxxx            # Server 酱 SendKey
+# 通知渠道配置
+notification:
+  enabled-channels: serverchan,notifyme  # 启用的通知渠道
+  serverchan:
+    sckey: SCTxxxxx            # Server 酱 SendKey
+  notifyme:
+    uuid: YOUR_UUID            # NotifyMe UUID（从 App 获取）
 
 # 飞书机器人配置
 feishu:
@@ -419,8 +438,16 @@ java -version
 
 - 确认 Server 酱 SendKey 配置正确
 - 检查 Server 酱服务状态
+- 查看日志中的错误信息
 
-### 5. 飞书机器人无法接收消息
+### 5. NotifyMe 推送失败
+
+- 确认 NotifyMe UUID 配置正确（在 App 设置中获取）
+- 检查网络连接是否正常
+- 确保 NotifyMe App 已在手机上安装并运行
+- 查看日志中的响应内容
+
+### 6. 飞书机器人无法接收消息
 
 - 确认飞书 App ID 和 App Secret 配置正确
 - 检查飞书应用权限设置
@@ -444,6 +471,8 @@ java -version
 - [x] 基础股票管理系统
 - [x] 实时行情获取与盈亏计算
 - [x] Server 酱微信推送集成
+- [x] NotifyMe Android 通知推送集成
+- [x] 多渠道通知系统架构（支持同时启用多个通知渠道）
 - [x] AI Agent 智能助手（节假日查询、股票信息查询）
 - [x] 飞书机器人 webhook 集成，支持飞书消息推送和接收
 - [x] 使用 AI Agent 实现股票信息的智能添加和修改功能

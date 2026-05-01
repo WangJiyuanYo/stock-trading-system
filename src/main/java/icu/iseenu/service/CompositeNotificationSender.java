@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,14 @@ public class CompositeNotificationSender {
     // Spring 会注入容器中所有 NotificationSender 的实现类
     @Autowired
     public CompositeNotificationSender(List<NotificationSender> allSenders,
-                                       @Value("${notification.enabled-channels:}") List<String> enabledChannelNames) {
+                                       @Value("${notification.enabled-channels}") String enabledChannelsStr) {
+        // 将逗号分隔的字符串转换为List
+        List<String> enabledChannelNames = Arrays.asList(enabledChannelsStr.split(","));
+        
+        log.info("配置文件中启用的渠道: {}", enabledChannelNames);
+        log.info("Spring容器中找到的通知实现: {}", 
+                allSenders.stream().map(NotificationSender::name).collect(Collectors.toList()));
+        
         // 根据配置的渠道名称过滤出需要的实现
         this.delegates = allSenders.stream()
                 .filter(sender -> enabledChannelNames.contains(sender.name()))
