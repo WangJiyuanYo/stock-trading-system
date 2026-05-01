@@ -51,10 +51,9 @@ public class StockController {
         try {
             String message = stockService.saveOrUpdateStock(stock);
             return Result.success(message, stock);
-        } catch (IllegalArgumentException e) {
-            return Result.badRequest(e.getMessage());
         } catch (IOException e) {
-            return Result.internalError("保存失败: " + e.getMessage());
+            // IO异常会被全局异常处理器捕获
+            throw new RuntimeException("保存失败", e);
         }
     }
 
@@ -69,10 +68,9 @@ public class StockController {
         try {
             String message = stockService.addStock(stock);
             return Result.success(message, stock);
-        } catch (IllegalArgumentException e) {
-            return Result.badRequest(e.getMessage());
         } catch (IOException e) {
-            return Result.internalError("保存失败: " + e.getMessage());
+            // IO异常会被全局异常处理器捕获
+            throw new RuntimeException("保存失败", e);
         }
     }
 
@@ -88,10 +86,9 @@ public class StockController {
             String message = stockService.saveBatchStocks(stocks);
             List<Stock> allStocks = stockService.getAllStocks();
             return Result.success(message, allStocks);
-        } catch (IllegalArgumentException e) {
-            return Result.badRequest(e.getMessage());
         } catch (IOException e) {
-            return Result.internalError("批量保存失败: " + e.getMessage());
+            // IO异常会被全局异常处理器捕获
+            throw new RuntimeException("批量保存失败", e);
         }
     }
 
@@ -105,8 +102,8 @@ public class StockController {
         try {
             List<Stock> stocks = stockService.getAllStocks();
             return Result.success("查询成功", stocks);
-        } catch (Exception e) {
-            return Result.internalError("查询失败: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException("查询失败", e);
         }
     }
 
@@ -124,8 +121,8 @@ public class StockController {
                 return Result.success("查询成功", stock);
             }
             return Result.notFound("股票不存在：" + stockCode);
-        } catch (Exception e) {
-            return Result.internalError("查询失败: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException("查询失败", e);
         }
     }
 
@@ -143,10 +140,9 @@ public class StockController {
         try {
             String message = stockService.updateStock(stockCode, stock);
             return Result.success(message, stock);
-        } catch (IllegalArgumentException e) {
-            return Result.badRequest(e.getMessage());
         } catch (IOException e) {
-            return Result.internalError("更新失败: " + e.getMessage());
+            // IO异常会被全局异常处理器捕获
+            throw new RuntimeException("更新失败", e);
         }
     }
 
@@ -161,10 +157,9 @@ public class StockController {
         try {
             String message = stockService.deleteStock(stockCode);
             return Result.success(message, null);
-        } catch (IllegalArgumentException e) {
-            return Result.badRequest(e.getMessage());
         } catch (IOException e) {
-            return Result.internalError("删除失败: " + e.getMessage());
+            // IO异常会被全局异常处理器捕获
+            throw new RuntimeException("删除失败", e);
         }
     }
 
@@ -179,8 +174,8 @@ public class StockController {
         try {
             boolean exists = stockService.exists(stockCode);
             return Result.success("查询成功", exists);
-        } catch (Exception e) {
-            return Result.internalError("查询失败: " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException("查询失败", e);
         }
     }
 

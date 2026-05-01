@@ -2,6 +2,8 @@ package icu.iseenu.service;
 
 import icu.iseenu.entity.Stock;
 import icu.iseenu.enums.StockTypeEnum;
+import icu.iseenu.exception.ResourceNotFoundException;
+import icu.iseenu.exception.ValidationException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,15 +27,15 @@ public class StockService {
      * 验证股票信息
      *
      * @param stock 股票对象
-     * @return 错误信息，如果为null表示验证通过
+     * @throws ValidationException 验证失败时抛出
      */
-    public String validateStock(Stock stock) {
+    public void validateStock(Stock stock) {
         if (stock == null) {
-            return "股票信息不能为空";
+            throw new ValidationException("股票信息不能为空");
         }
 
         if (stock.getStockCode() == null || stock.getStockCode().trim().isEmpty()) {
-            return "股票代码不能为空";
+            throw new ValidationException("股票代码不能为空");
         }
 
         // 验证并设置股票类型
@@ -42,12 +44,10 @@ public class StockService {
         } else {
             StockTypeEnum typeEnum = StockTypeEnum.fromName(stock.getStockType());
             if (typeEnum == null) {
-                return "无效的股票类型：" + stock.getStockType();
+                throw new ValidationException("无效的股票类型：" + stock.getStockType());
             }
             stock.setStockType(typeEnum.getName());
         }
-
-        return null;
     }
 
     /**
@@ -114,14 +114,12 @@ public class StockService {
      *
      * @param stock 股票对象
      * @return 操作结果信息
+     * @throws ValidationException 验证失败时抛出
      * @throws IOException 保存失败
      */
     public String saveOrUpdateStock(Stock stock) throws IOException {
         // 验证股票信息
-        String validationError = validateStock(stock);
-        if (validationError != null) {
-            throw new IllegalArgumentException(validationError);
-        }
+        validateStock(stock);
 
         // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
@@ -154,15 +152,12 @@ public class StockService {
      *
      * @param stock 股票对象
      * @return 操作结果信息
+     * @throws ValidationException 股票代码已存在或验证失败
      * @throws IOException 保存失败
-     * @throws IllegalArgumentException 股票代码已存在或验证失败
      */
     public String addStock(Stock stock) throws IOException {
         // 验证股票信息
-        String validationError = validateStock(stock);
-        if (validationError != null) {
-            throw new IllegalArgumentException(validationError);
-        }
+        validateStock(stock);
 
         // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
@@ -173,7 +168,7 @@ public class StockService {
         // 检查股票代码是否已存在
         for (Stock existingStock : allStocks) {
             if (existingStock.getStockCode().equals(stock.getStockCode())) {
-                throw new IllegalArgumentException("股票代码已存在：" + stock.getStockCode() +
+                throw new ValidationException("股票代码已存在：" + stock.getStockCode() +
                         "，请使用更新接口或先删除原有记录");
             }
         }
@@ -192,18 +187,20 @@ public class StockService {
      *
      * @param stocks 股票列表
      * @return 操作结果信息
+     * @throws ValidationException 验证失败时抛出
      * @throws IOException 保存失败
      */
     public String saveBatchStocks(List<Stock> stocks) throws IOException {
         if (stocks == null || stocks.isEmpty()) {
-            throw new IllegalArgumentException("股票列表不能为空");
+            throw new ValidationException("股票列表不能为空");
         }
 
         // 验证所有股票
         for (Stock stock : stocks) {
-            String validationError = validateStock(stock);
-            if (validationError != null) {
-                throw new IllegalArgumentException(validationError + ": " + stock);
+            try {
+                validateStock(stock);
+            } catch (ValidationException e) {
+                throw new ValidationException(e.getMessage() + ": " + stock);
             }
             // 标准化股票代码
             stock.setStockCode(normalizeStockCode(stock.getStockCode()));
@@ -262,15 +259,13 @@ public class StockService {
      * @param stockCode 股票代码
      * @param stock 新的股票信息
      * @return 操作结果信息
+     * @throws ValidationException 股票不存在或验证失败
+     * @throws ResourceNotFoundException 股票不存在
      * @throws IOException 保存失败
-     * @throws IllegalArgumentException 股票不存在或验证失败
      */
     public String updateStock(String stockCode, Stock stock) throws IOException {
         // 验证股票信息
-        String validationError = validateStock(stock);
-        if (validationError != null) {
-            throw new IllegalArgumentException(validationError);
-        }
+        validateStock(stock);
 
         List<Stock> allStocks = getAllStocks();
 
@@ -284,7 +279,7 @@ public class StockService {
             }
         }
 
-        throw new IllegalArgumentException("股票不存在：" + stockCode);
+        throw new ResourceNotFoundException("股票不存在：" + stockCode);
     }
 
     /**
@@ -292,8 +287,8 @@ public class StockService {
      *
      * @param stockCode 股票代码
      * @return 操作结果信息
+     * @throws ResourceNotFoundException 股票不存在
      * @throws IOException 保存失败
-     * @throws IllegalArgumentException 股票不存在
      */
     public String deleteStock(String stockCode) throws IOException {
         List<Stock> allStocks = getAllStocks();
@@ -309,7 +304,7 @@ public class StockService {
         }
 
         if (!removed) {
-            throw new IllegalArgumentException("股票不存在：" + stockCode);
+            throw new ResourceNotFoundException("股票不存在：" + stockCode);
         }
 
         // 保存更新后的列表

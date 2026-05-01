@@ -1,5 +1,6 @@
 package icu.iseenu.service;
 
+import icu.iseenu.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +22,12 @@ public class HolidayJsonService {
      * 清空并写入新的JSON数据到节假日文件
      *
      * @param jsonString JSON格式的字符串
+     * @throws ValidationException 参数验证失败
      * @throws IOException 文件操作异常
      */
     public void writeHolidayJson(String jsonString) throws IOException {
         if (jsonString == null || jsonString.trim().isEmpty()) {
-            throw new IllegalArgumentException("JSON字符串不能为空");
+            throw new ValidationException("JSON字符串不能为空");
         }
 
         Path path = Paths.get(calenderPath, HOLIDAY_JSON_FILE);
@@ -46,11 +48,12 @@ public class HolidayJsonService {
      * 格式化并写入JSON数据（美化输出）
      *
      * @param jsonString JSON格式的字符串
+     * @throws ValidationException 参数验证失败
      * @throws IOException 文件操作异常
      */
     public void writeFormattedHolidayJson(String jsonString) throws IOException {
         if (jsonString == null || jsonString.trim().isEmpty()) {
-            throw new IllegalArgumentException("JSON字符串不能为空");
+            throw new ValidationException("JSON字符串不能为空");
         }
 
         Path path = Paths.get(calenderPath, HOLIDAY_JSON_FILE);

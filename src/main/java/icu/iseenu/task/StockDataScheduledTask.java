@@ -1,7 +1,7 @@
 package icu.iseenu.task;
 
 import icu.iseenu.entity.StockMarketData;
-import icu.iseenu.service.NotificationService;
+import icu.iseenu.service.notification.NotificationService;
 import icu.iseenu.service.StockApiService;
 import icu.iseenu.util.TradingDayUtil;
 import org.slf4j.Logger;

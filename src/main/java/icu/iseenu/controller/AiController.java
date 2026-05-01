@@ -1,8 +1,8 @@
 package icu.iseenu.controller;
 
 
-import icu.iseenu.agent.tool.assistant.HolidayAssistant;
-import icu.iseenu.agent.tool.assistant.WriteJsonFileAssistant;
+import icu.iseenu.agent.assistant.HolidayAssistant;
+import icu.iseenu.agent.assistant.WriteJsonFileAssistant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;

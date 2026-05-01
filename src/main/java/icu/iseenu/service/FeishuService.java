@@ -6,7 +6,7 @@ import com.lark.oapi.core.utils.Jsons;
 import com.lark.oapi.service.im.v1.model.CreateMessageReq;
 import com.lark.oapi.service.im.v1.model.CreateMessageReqBody;
 import com.lark.oapi.service.im.v1.model.CreateMessageResp;
-import icu.iseenu.agent.agent.SupervisorAgents;
+import icu.iseenu.agent.supervisor.SupervisorAgents;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
