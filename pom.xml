@@ -13,10 +13,25 @@
     </parent>
 
     <groupId>icu.iseenu</groupId>
-    <artifactId>autoCodeWorkspace</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>autoCodeWorkspace</name>
-    <description>Demo project for Spring Boot</description>
+    <artifactId>stock-trading-system</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    
+    <name>Stock Trading System</name>
+    <description>智能股票交易系统 - 多模块架构</description>
+
+    <!-- 子模块列表 -->
+    <modules>
+        <module>trading-common</module>
+        <module>trading-domain</module>
+        <module>trading-infrastructure</module>
+        <module>trading-notification</module>
+        <module>trading-stock</module>
+        <module>trading-feishu</module>
+        <module>trading-ai</module>
+        <module>trading-roco</module>
+        <module>trading-application</module>
+    </modules>
 
     <properties>
         <java.version>17</java.version>
@@ -25,8 +40,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <langchain4j.version>1.13.0</langchain4j.version>
+        <playwright.version>1.40.0</playwright.version>
+        <httpclient5.version>5.2.1</httpclient5.version>
+        <httpcore5.version>5.2.4</httpcore5.version>
+        <httpcore5-h2.version>5.2.4</httpcore5-h2.version>
+        <commons-io.version>2.15.0</commons-io.version>
     </properties>
 
+    <!-- 统一依赖管理 -->
     <dependencyManagement>
         <dependencies>
             <!-- LangChain4j BOM (统一管理版本) -->
@@ -37,115 +58,115 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            
+            <!-- 内部模块版本管理 -->
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-infrastructure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-notification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-stock</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-feishu</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-ai</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>icu.iseenu</groupId>
+                <artifactId>trading-roco</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            
+            <!-- 外部依赖版本管理 -->
+            <dependency>
+                <groupId>com.microsoft.playwright</groupId>
+                <artifactId>playwright</artifactId>
+                <version>${playwright.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${httpclient5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>${httpcore5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5-h2</artifactId>
+                <version>${httpcore5-h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
+    <!-- 公共依赖（所有模块共享） -->
     <dependencies>
-        <!-- Spring Boot Starter Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Starter WebFlux (用于 WebClient 远程 API 调用) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-
         <!-- Lombok (可选，简化代码) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
-        <!-- LangChain4j Agent 支持 (版本由 BOM 管理) -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-agentic</artifactId>
-        </dependency>
-
-        <!-- OpenAI 集成 (版本由 BOM 管理) -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- AI 服务声明式接口支持 -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-        </dependency>
-
-        <!-- LangChain4j Easy RAG (包含文档解析和向量嵌入，约 65MB) -->
-        <!-- 如果不需要 RAG 功能，可以注释掉以下依赖以减小 Jar 包体积 -->
-<!--        <dependency>-->
-<!--            <groupId>dev.langchain4j</groupId>-->
-<!--            <artifactId>langchain4j-easy-rag</artifactId>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
-
-        <!--   飞书机器人的SDK     -->
-        <!-- Source: https://mvnrepository.com/artifact/com.larksuite.oapi/oapi-sdk -->
-        <dependency>
-            <groupId>com.larksuite.oapi</groupId>
-            <artifactId>oapi-sdk</artifactId>
-            <version>2.5.3</version>
-            <scope>compile</scope>
-        </dependency>
-
-
-        <dependency>
-            <artifactId>oapi-sdk-servlet-ext</artifactId>
-            <groupId>com.larksuite.oapi</groupId>
-            <version>1.0.0-rc3</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>oapi-sdk</artifactId>
-                    <groupId>com.larksuite.oapi</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-mcp</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- langchian4j skills -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-skills</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.11.0</version>
+                    <configuration>
+                        <source>17</source>
+                        <target>17</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>

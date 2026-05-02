@@ -557,6 +557,7 @@ java -version
 
 - [ ] Readme 增加预览图
 - [ ] 增加 Skills 功能
+- [ ] **Roco 模块配置优化**：将 RocoMerchantService 中的硬编码配置提取到 application.yml
 
 ### 📝 计划中
 

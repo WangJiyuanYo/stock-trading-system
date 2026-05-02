@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>icu.iseenu</groupId>
+        <artifactId>stock-trading-system</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>trading-roco</artifactId>
+    <packaging>jar</packaging>
+    <name>Trading Roco</name>
+    <description>洛克王国远行商人提醒模块</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-common</artifactId>
+        </dependency>
+        
+        <!-- 通知服务 -->
+        <dependency>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-notification</artifactId>
+        </dependency>
+        
+        <!-- HTTP Client -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
+        </dependency>
+
+        <!-- JSON Processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- Playwright for Browser Automation -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+        </dependency>
+
+        <!-- Apache Commons IO -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: autoCodeWorkspace
+
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com/v1
+      model-name: deepseek-v4-flash
+
+app:
+  json:
+    storage:
+      path: ./data/json
+    calender:
+      path: ./data/calender
+  # RAG配置
+  rag:
+    auto-load: true  # 应用启动时自动加载节假日数据到向量库
+
+# 飞书机器人配置
+feishu:
+  app-id: ${FEISHU_APP_ID:}  # 飞书 App ID，可选
+  app-secret: ${FEISHU_APP_SECRET:}  # 飞书 App Secret，可选
+
+notification:
+  enabled-channels: serverchan,notifyme
+  serverchan:
+    sckey: ${SERVERCHAN_SENDKEY}
+  notifyme:
+    uuid: ${NOTIFYME_UUID}
+    base-url: https://notifyme-server.wzn556.top/?
+
+# 洛克王国远行商人配置
+roco:
+  rocom-api-key: sk-5c14c1e5da063037d02c15e50285dd04  # 游戏API密钥
+  imgbb-key: 2340ec867931db0baddcf58042f26545  # 图床API密钥
+  notifyme-uuid: 9wjZXCj7E26L9axeXmcThE  # Notify.me UUID
+  cron: "0 1 8,12,16,20 * * ?"  # 定时任务cron表达式，每天8:01、12:01、16:01、20:01执行

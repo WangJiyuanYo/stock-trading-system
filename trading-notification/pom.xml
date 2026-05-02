@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>icu.iseenu</groupId>
+        <artifactId>stock-trading-system</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>trading-notification</artifactId>
+    <packaging>jar</packaging>
+    <name>Trading Notification</name>
+    <description>通知模块 - 多渠道通知服务，支持事件驱动</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-domain</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-infrastructure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+    </dependencies>
+</project>
