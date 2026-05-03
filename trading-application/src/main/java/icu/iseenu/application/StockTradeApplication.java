@@ -10,15 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration.class
 })
 @ComponentScan(basePackages = {
-    "icu.iseenu.application",
-    "icu.iseenu.stock",
-    "icu.iseenu.feishu",
-    "icu.iseenu.ai",
-    "icu.iseenu.roco",
-    "icu.iseenu.notification",
-    "icu.iseenu.infra",
-    "icu.iseenu.domain",
-    "icu.iseenu.common"
+    "icu.iseenu.*"
 })
 @EnableScheduling // 启用定时任务功能
 public class StockTradeApplication {

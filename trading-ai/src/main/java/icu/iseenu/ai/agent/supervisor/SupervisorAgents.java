@@ -1,30 +1,23 @@
 package icu.iseenu.ai.agent.supervisor;
 
-
+import dev.langchain4j.agentic.declarative.SupervisorAgent;
 import dev.langchain4j.service.MemoryId;
-import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;
 import icu.iseenu.ai.agent.assistant.HolidayAssistant;
+import icu.iseenu.ai.agent.assistant.RocoAssistant;
 import icu.iseenu.ai.agent.assistant.StockAssistant;
-import icu.iseenu.ai.agent.assistant.WriteJsonFileAssistant;
 
-/**
- * 封装的AI调用类,通过这个方法调用内部工具
- * TODO: 等待 LangChain4j 支持 agentic 功能后启用
- */
-// @AiService(chatMemoryProvider = "chatMemoryProvider")
+@AiService(
+        chatMemoryProvider = "chatMemoryProvider"
+)
+
 public interface SupervisorAgents {
-    // @dev.langchain4j.agentic.declarative.SupervisorAgent(
-    //         subAgents = {HolidayAssistant.class, StockAssistant.class, WriteJsonFileAssistant.class},
-    //         maxAgentsInvocations = 5,
-    //         responseStrategy = SupervisorResponseStrategy.LAST,
-    //         description = """
-    //                 你是一个智能助理，可以调用子助手来完成用户的请求。
-    //                 如果用户需要处理股票相关操作（添加、修改、删除、查询），请使用 StockAssistant。
-    //                 如果用户需要查询节假日信息，请使用 HolidayAssistant。
-    //                 如果用户需要写入文件，请使用WriteJsonFileAssistant。
-    //                 """)
 
-    // String chat(@MemoryId String memoryId, @UserMessage String userMessage);
+    @SupervisorAgent(
+            subAgents = {HolidayAssistant.class, StockAssistant.class, RocoAssistant.class},
+            maxAgentsInvocations = 5,
+            description = "你是一个智能助理，可以调用工具箱里的工具来帮助用户")
+
+    String chat(@MemoryId String memoryId, @UserMessage String userMessage);
 }

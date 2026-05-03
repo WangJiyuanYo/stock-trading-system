@@ -139,13 +139,19 @@ public class HtmlGenerator {
                           .replace("{% endif %}", "-->");
         }
         
-        // 生成商品列表HTML
+        // 生成商品列表HTML，替换整个 {% for %}...{% endfor %} 块
         String productsHtml = generateProductsHtml(products);
+        String forBlock = "{% for product in products %}";
+        String endforBlock = "{% endfor %}";
+        int forIdx = result.indexOf(forBlock);
+        int endforIdx = result.indexOf(endforBlock, forIdx);
+        if (forIdx >= 0 && endforIdx >= 0) {
+            result = result.substring(0, forIdx)
+                    + productsHtml
+                    + result.substring(endforIdx + endforBlock.length());
+        }
         result = result.replace("{% if products and products|length > 0 %}", "")
-                      .replace("{% for product in products %}", productsHtml)
-                      .replace("{% endfor %}", "")
                       .replace("{% else %}", "<!--")
-                      .replace("<div class=\"product-empty\">本轮暂无商品，稍后再来看看。</div>", "")
                       .replace("{% endif %}", "-->");
         
         return result;

@@ -1,5 +1,6 @@
 package icu.iseenu.feishu.service;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.lark.oapi.Client;
 import com.lark.oapi.core.utils.Jsons;
@@ -18,39 +19,33 @@ import java.util.UUID;
 @Service
 public class FeishuService {
 
-
     private final Client client;
 
-    private SupervisorAgents supervisorAgents;  // 移除 final，使其可选
+    private SupervisorAgents supervisorAgents;
 
     public FeishuService(Client client) {
         this.client = client;
     }
 
-    @Autowired(required = false)  // SupervisorAgents 是可选的
+    @Autowired(required = false)
     public void setSupervisorAgents(SupervisorAgents supervisorAgents) {
         this.supervisorAgents = supervisorAgents;
     }
 
     /**
      * 发送Markdown格式消息
-     *
-     * @param markdownContent Markdown内容
      */
     public void sendMarkdownMessage(String senderId, String markdownContent) {
-        // 使用interactive卡片消息类型,支持更好的富文本展示
-        // 将markdown转换为纯文本,保留基本格式
+
         String textContent = markdownContent.replace("# ", "").replace("## ", "").replace("|", "");
 
-        // 构建interactive卡片消息
         StringBuilder cardBuilder = new StringBuilder();
         cardBuilder.append("{");
         cardBuilder.append("\"config\":{\"wide_screen_mode\":true},");
-        cardBuilder.append("\"header\":{\"title\":{\"tag\":\"plain_text\",\"content\":\"消息通知\"},\"template\":\"blue\"},");
+        cardBuilder.append("\"header\":{\"title\":{\"tag\":\"plain_text\",\"content\":\"AI 助手\"},\"template\":\"blue\"},");
         cardBuilder.append("\"elements\":[");
         cardBuilder.append("{\"tag\":\"div\",\"text\":{\"tag\":\"lark_md\",\"content\":\"");
 
-        // 转义特殊字符
         String escapedContent = textContent
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
@@ -63,7 +58,6 @@ public class FeishuService {
         String content = cardBuilder.toString();
         log.debug("发送卡片消息内容: {}", content);
 
-        // 创建请求对象
         CreateMessageReq req = CreateMessageReq.newBuilder()
                 .createMessageReqBody(CreateMessageReqBody.newBuilder()
                         .receiveId(senderId)
@@ -75,12 +69,13 @@ public class FeishuService {
                 .build();
 
         try {
-            // 发起请求
             CreateMessageResp resp = client.im().v1().message().create(req);
 
             if (!resp.success()) {
                 log.error("发送卡片消息失败 - code:{},msg:{},reqId:{}, resp:{}",
-                        resp.getCode(), resp.getMsg(), resp.getRequestId(), Jsons.createGSON(true, false).toJson(JsonParser.parseString(new String(resp.getRawResponse().getBody(), StandardCharsets.UTF_8))));
+                        resp.getCode(), resp.getMsg(), resp.getRequestId(),
+                        Jsons.createGSON(true, false).toJson(JsonParser.parseString(
+                                new String(resp.getRawResponse().getBody(), StandardCharsets.UTF_8))));
                 return;
             }
 
@@ -91,12 +86,41 @@ public class FeishuService {
     }
 
     /**
-     * 处理飞书接收到的消息（暂时禁用，等待 SupervisorAgents 实现）
+     * 处理飞书接收到的消息，调用 AI Agent 并回复
      *
-     * @param chatId  会话ID
-     * @param message 消息内容
+     * @param chatId  会话ID（用作 memoryId）
+     * @param senderId 发送者 openId
+     * @param messageContent 消息原始 JSON 字符串
      */
-    // public void resolveEvent(String chatId, String senderId, String message) {
-    //     sendMarkdownMessage(senderId, supervisorAgents.chat(chatId, message));
-    // }
+    public void resolveEvent(String chatId, String senderId, String messageContent) {
+        if (supervisorAgents == null) {
+            log.warn("SupervisorAgents 未初始化");
+            sendMarkdownMessage(senderId, "AI 服务未配置，请设置 DEEPSEEK_API_KEY 后重启");
+            return;
+        }
+
+        String userText;
+        try {
+            JsonObject json = JsonParser.parseString(messageContent).getAsJsonObject();
+            userText = json.has("text") ? json.get("text").getAsString() : messageContent;
+        } catch (Exception e) {
+            log.warn("解析消息内容失败，使用原始内容: {}", messageContent);
+            userText = messageContent;
+        }
+
+        if (userText == null || userText.trim().isEmpty()) {
+            return;
+        }
+
+        log.info("飞书消息: chatId={}, text={}", chatId, userText);
+
+        try {
+            String reply = supervisorAgents.chat(chatId, userText);
+            log.info("Agent 回复: {}", reply);
+            sendMarkdownMessage(senderId, reply);
+        } catch (Exception e) {
+            log.error("Agent 调用失败", e);
+            sendMarkdownMessage(senderId, "处理失败: " + e.getMessage());
+        }
+    }
 }

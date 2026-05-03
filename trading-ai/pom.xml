@@ -29,11 +29,19 @@
             <groupId>icu.iseenu</groupId>
             <artifactId>trading-stock</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-roco</artifactId>
+        </dependency>
+
         <!-- LangChain4j -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -42,6 +50,10 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-skills</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic</artifactId>
         </dependency>
     </dependencies>
 </project>

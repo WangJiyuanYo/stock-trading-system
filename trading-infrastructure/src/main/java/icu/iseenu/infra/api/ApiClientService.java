@@ -17,15 +17,13 @@ import java.util.Map;
 @Service
 public class ApiClientService {
 
-    @Value("${app.api.base-url:https://api.example.com}")
-    private String baseUrl;
-
-    @Value("${app.api.timeout:30000}")
-    private int timeout;
-
+    private final int timeout;
     private final WebClient webClient;
 
-    public ApiClientService(WebClient.Builder webClientBuilder) {
+    public ApiClientService(WebClient.Builder webClientBuilder,
+                            @Value("${app.api.base-url:https://api.deepseek.com}") String baseUrl,
+                            @Value("${app.api.timeout:30000}") int timeout) {
+        this.timeout = timeout;
         this.webClient = webClientBuilder
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

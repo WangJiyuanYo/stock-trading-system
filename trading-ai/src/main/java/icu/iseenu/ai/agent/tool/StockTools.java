@@ -1,43 +1,46 @@
 package icu.iseenu.ai.agent.tool;
 
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.model.chat.ChatModel;
 import icu.iseenu.domain.entity.Stock;
 import icu.iseenu.stock.api.StockApiService;
 import icu.iseenu.stock.service.StockService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-@ConditionalOnBean(ChatModel.class)  // 只有存在 ChatModel 时才启用
 @Slf4j
 public class StockTools {
-    @Value("${app.json.storage.path}")
-    private String filePath;
 
-    @Autowired
-    private StockApiService stockApiService;
+    private final String filePath;
+    private final StockApiService stockApiService;
+    private final StockService stockService;
 
-    @Autowired
-    private StockService stockService;
+    public StockTools(@Value("${app.json.storage.path}") String filePath,
+                      StockApiService stockApiService,
+                      StockService stockService) {
+        this.filePath = filePath;
+        this.stockApiService = stockApiService;
+        this.stockService = stockService;
+    }
 
     @Tool("以Markdown表格形式展示股票持仓及盈亏情况")
     public String getStockTableWithProfit() {
+        log.info("调用getStockTableWithProfit接口");
         try {
-            // 获取所有股票及其行情数据（包含盈亏计算）
-            List<icu.iseenu.domain.entity.StockMarketData> marketDataList = stockApiService.fetchAllStockMarketDataWithProfit();
+            List<icu.iseenu.domain.entity.StockMarketData> marketDataList =
+                    stockApiService.fetchAllStockMarketDataWithProfit();
 
             if (marketDataList == null || marketDataList.isEmpty()) {
                 return "暂无股票数据";
             }
 
-            // 构建Markdown表格
             StringBuilder markdown = new StringBuilder();
             markdown.append("| 股票名称 | 持仓价格 | 持仓数量 | 当前价格 | 浮盈 |\n");
             markdown.append("|---------|---------|---------|---------|------|\n");
@@ -45,37 +48,34 @@ public class StockTools {
             for (icu.iseenu.domain.entity.StockMarketData data : marketDataList) {
                 String name = data.getName() != null ? data.getName() : "未知";
 
-                // 持仓价格（每股成本）
                 String holdingPrice = "-";
                 if (data.getHoldingPrice() != null) {
                     holdingPrice = String.format("%.2f", data.getHoldingPrice());
                 }
 
-                // 持仓数量
                 String holdingQuantity = "-";
                 if (data.getHoldingQuantity() != null) {
                     holdingQuantity = String.valueOf(data.getHoldingQuantity());
                 }
 
-                // 当前价格
                 String currentPrice = "-";
                 if (data.getCurrentPrice() != null) {
                     currentPrice = String.format("%.2f", data.getCurrentPrice());
                 }
 
-                // 浮盈计算：(当前价格 - 持仓价格) * 持仓数量
                 String profit = "-";
-                if (data.getCurrentPrice() != null && data.getHoldingPrice() != null && data.getHoldingQuantity() != null) {
-                    java.math.BigDecimal profitValue = data.getCurrentPrice()
+                if (data.getCurrentPrice() != null && data.getHoldingPrice() != null
+                        && data.getHoldingQuantity() != null) {
+                    BigDecimal profitValue = data.getCurrentPrice()
                             .subtract(data.getHoldingPrice())
-                            .multiply(new java.math.BigDecimal(data.getHoldingQuantity()));
+                            .multiply(new BigDecimal(data.getHoldingQuantity()));
 
-                    // 添加正负号标识
-                    String sign = profitValue.compareTo(java.math.BigDecimal.ZERO) >= 0 ? "+" : "";
+                    String sign = profitValue.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
                     profit = sign + String.format("%.2f", profitValue);
                 }
 
-                markdown.append(String.format("| %s | %s | %s | %s | %s |\n", name, holdingPrice, holdingQuantity, currentPrice, profit));
+                markdown.append(String.format("| %s | %s | %s | %s | %s |\n",
+                        name, holdingPrice, holdingQuantity, currentPrice, profit));
             }
 
             String result = markdown.toString();
@@ -88,13 +88,13 @@ public class StockTools {
         }
     }
 
-    @Tool("新增 编辑股票")
+    @Tool("新增或编辑股票")
     public boolean writeJson(Stock stock) {
         try {
             stockService.saveOrUpdateStock(stock);
             return true;
         } catch (IOException e) {
-            log.error("写入文件失败,stock:{}", stock);
+            log.error("写入文件失败, stock: {}", stock);
         }
         return false;
     }
@@ -105,9 +105,8 @@ public class StockTools {
             stockService.deleteStock(stockCode);
             return true;
         } catch (IOException e) {
-            log.error("删除文件失败,stockCode:{}", stockCode);
+            log.error("删除文件失败, stockCode: {}", stockCode);
         }
         return false;
     }
-
 }

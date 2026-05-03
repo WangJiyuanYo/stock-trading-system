@@ -30,5 +30,20 @@ serverchan:
 # 飞书机器人配置
 # 获取 App ID 和 App Secret: https://open.feishu.cn/app
 feishu:
-  app-id: your_feishu_app_id_here  # ⚠️ 请替换为你的飞书应用 App ID
-  app-secret: your_feishu_app_secret_here  # ⚠️ 请替换为你的飞书应用 App Secret
+  app-id: ${FEISHU_APP_ID:}  # 飞书 App ID，环境变量 FEISHU_APP_ID
+  app-secret: ${FEISHU_APP_SECRET:}  # 飞书 App Secret，环境变量 FEISHU_APP_SECRET
+
+notification:
+  enabled-channels: serverchan,notifyme
+  serverchan:
+    sckey: ${SERVERCHAN_SENDKEY:}
+  notifyme:
+    uuid: ${NOTIFYME_UUID:}
+    base-url: https://notifyme-server.wzn556.top/?
+
+# 洛克王国远行商人配置
+roco:
+  rocom-api-key: ${ROCOM_API_KEY:}  # 游戏API密钥，环境变量 ROCOM_API_KEY
+  imgbb-key: ${IMGBB_API_KEY:}  # 图床API密钥，环境变量 IMGBB_API_KEY
+  notifyme-uuid: ${NOTIFYME_UUID:}  # Notify.me UUID
+  cron: "0 5 8,12,16,20 * * ?"  # 定时任务cron表达式

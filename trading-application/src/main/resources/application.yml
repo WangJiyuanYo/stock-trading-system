@@ -10,7 +10,10 @@ langchain4j:
     chat-model:
       api-key: ${DEEPSEEK_API_KEY}
       base-url: https://api.deepseek.com/v1
-      model-name: deepseek-v4-flash
+      model-name: deepseek-chat
+      # 禁用 DeepSeek 的思考模式，避免 reasoning_content 错误
+      extra-params:
+        enable_thinking: false
 
 app:
   json:
@@ -37,7 +40,7 @@ notification:
 
 # 洛克王国远行商人配置
 roco:
-  rocom-api-key: sk-5c14c1e5da063037d02c15e50285dd04  # 游戏API密钥
-  imgbb-key: 2340ec867931db0baddcf58042f26545  # 图床API密钥
-  notifyme-uuid: 9wjZXCj7E26L9axeXmcThE  # Notify.me UUID
-  cron: "0 1 8,12,16,20 * * ?"  # 定时任务cron表达式，每天8:01、12:01、16:01、20:01执行
+  rocom-api-key: ${ROCOM_API_KEY:}  # 游戏API密钥，环境变量 ROCOM_API_KEY
+  imgbb-key: ${IMGBB_API_KEY:}  # 图床API密钥，环境变量 IMGBB_API_KEY
+  notifyme-uuid: ${NOTIFYME_UUID:}  # Notify.me UUID
+  cron: "0 5 8,12,16,20 * * ?"  # 定时任务cron表达式

@@ -1,10 +1,9 @@
 package icu.iseenu.application.controller;
 
-
-// TODO: 等待 LangChain4j ChatModel 配置完成后启用
-// import icu.iseenu.ai.agent.assistant.HolidayAssistant;
-// import icu.iseenu.ai.agent.assistant.WriteJsonFileAssistant;
+import icu.iseenu.ai.agent.assistant.HolidayAssistant;
+import icu.iseenu.ai.agent.assistant.WriteJsonFileAssistant;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,27 +19,31 @@ public class AiController {
     private String calenderPath;
 
     private static final String HOLIDAY_JSON_FILE = "cn_holiday_";
+    private static final String JSON_EXTENSION = ".json";
 
-    private static final String DEFAULT_EXPLANATION = ".json";
+    private HolidayAssistant holidayAssistant;
+    private WriteJsonFileAssistant writeJsonFileAssistant;
 
-    // private final HolidayAssistant holidayAssistant;
-    // private final WriteJsonFileAssistant writeJsonFileAssistant;
+    @Autowired(required = false)
+    public void setHolidayAssistant(HolidayAssistant holidayAssistant) {
+        this.holidayAssistant = holidayAssistant;
+    }
 
-    // public AiController(HolidayAssistant holidayAssistant,
-    //                     WriteJsonFileAssistant writeJsonFileAssistant) {
-    //     this.holidayAssistant = holidayAssistant;
-    //     this.writeJsonFileAssistant = writeJsonFileAssistant;
-    // }
-
+    @Autowired(required = false)
+    public void setWriteJsonFileAssistant(WriteJsonFileAssistant writeJsonFileAssistant) {
+        this.writeJsonFileAssistant = writeJsonFileAssistant;
+    }
 
     @GetMapping("/fetch-holiday")
     public String fetchHoliday(@RequestParam String year) {
-        // TODO: 等待 AI 功能启用后实现
-        return "AI 功能暂时禁用，等待 LangChain4j ChatModel 配置完成";
-        // if ("".equals(year) || Integer.parseInt(year) < 2025) {
-        //     return "请输入正确的年份";
-        // }
-        // String fetchHoliday = holidayAssistant.fetchHoliday(year);
-        // return writeJsonFileAssistant.writJsonFiles(fetchHoliday, calenderPath, HOLIDAY_JSON_FILE + year, DEFAULT_EXPLANATION);
+        if (holidayAssistant == null || writeJsonFileAssistant == null) {
+            return "AI 服务未配置，请设置 DEEPSEEK_API_KEY 环境变量后重启";
+        }
+        if (year == null || year.isEmpty() || Integer.parseInt(year) < 2025) {
+            return "请输入正确的年份";
+        }
+        String fetchHoliday = holidayAssistant.fetchHoliday(year);
+        return writeJsonFileAssistant.writJsonFiles(fetchHoliday, calenderPath,
+                HOLIDAY_JSON_FILE + year, JSON_EXTENSION);
     }
 }
