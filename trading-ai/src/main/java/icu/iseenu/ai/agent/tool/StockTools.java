@@ -42,10 +42,18 @@ public class StockTools {
             }
 
             StringBuilder markdown = new StringBuilder();
-            markdown.append("| 股票名称 | 持仓价格 | 持仓数量 | 当前价格 | 浮盈 |\n");
-            markdown.append("|---------|---------|---------|---------|------|\n");
+            markdown.append("| 股票代码 | 股票名称 | 持仓价格 | 持仓数量 | 当前价格 | 浮盈 |\n");
+            markdown.append("|---------|---------|---------|---------|---------|------|\n");
 
             for (icu.iseenu.domain.entity.StockMarketData data : marketDataList) {
+                // 移除市场前缀，只显示纯代码
+                String stockCode = data.getStockCode();
+                if (stockCode != null) {
+                    stockCode = stockCode.replaceAll("^(sh|sz|hk|gb_)", "").toUpperCase();
+                } else {
+                    stockCode = "-";
+                }
+                
                 String name = data.getName() != null ? data.getName() : "未知";
 
                 String holdingPrice = "-";
@@ -74,15 +82,15 @@ public class StockTools {
                     profit = sign + String.format("%.2f", profitValue);
                 }
 
-                markdown.append(String.format("| %s | %s | %s | %s | %s |\n",
-                        name, holdingPrice, holdingQuantity, currentPrice, profit));
+                markdown.append(String.format("| %s | %s | %s | %s | %s | %s |\n",
+                        stockCode, name, holdingPrice, holdingQuantity, currentPrice, profit));
             }
 
             String result = markdown.toString();
             log.info("生成股票表格:\n{}", result);
             return result;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("获取股票数据失败", e);
             return "获取股票数据失败: " + e.getMessage();
         }
@@ -93,7 +101,7 @@ public class StockTools {
         try {
             stockService.saveOrUpdateStock(stock);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("写入文件失败, stock: {}", stock);
         }
         return false;
@@ -104,7 +112,7 @@ public class StockTools {
         try {
             stockService.deleteStock(stockCode);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("删除文件失败, stockCode: {}", stockCode);
         }
         return false;

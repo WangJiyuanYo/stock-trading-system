@@ -3,12 +3,10 @@ package icu.iseenu.stock.controller;
 import icu.iseenu.common.Result;
 import icu.iseenu.domain.entity.Stock;
 import icu.iseenu.domain.entity.StockMarketData;
-import icu.iseenu.infra.storage.JsonFileService;
 import icu.iseenu.stock.api.StockApiService;
 import icu.iseenu.stock.service.StockService;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,33 +22,25 @@ import java.util.Map;
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, maxAge = 3600)
 public class StockController {
 
-    private final JsonFileService jsonFileService;
     private final StockApiService stockApiService;
     private final StockService stockService;
 
-    public StockController(JsonFileService jsonFileService,
-                           StockApiService stockApiService,
+    public StockController(StockApiService stockApiService,
                            StockService stockService) {
-        this.jsonFileService = jsonFileService;
         this.stockApiService = stockApiService;
         this.stockService = stockService;
     }
 
     /**
-     * 保存单只股票信息到 JSON 文件（统一保存到 stocks.json）
+     * 保存单只股票信息到数据库（统一保存到 stocks 表）
      *
      * @param stock 股票信息
      * @return 响应结果
      */
     @PostMapping("/save")
     public Result<Stock> saveStock(@RequestBody Stock stock) {
-        try {
-            String message = stockService.saveOrUpdateStock(stock);
-            return Result.success(message, stock);
-        } catch (IOException e) {
-            // IO异常会被全局异常处理器捕获
-            throw new RuntimeException("保存失败", e);
-        }
+        String message = stockService.saveOrUpdateStock(stock);
+        return Result.success(message, stock);
     }
 
     /**
@@ -61,31 +51,21 @@ public class StockController {
      */
     @PostMapping("/add")
     public Result<Stock> addStock(@RequestBody Stock stock) {
-        try {
-            String message = stockService.addStock(stock);
-            return Result.success(message, stock);
-        } catch (IOException e) {
-            // IO异常会被全局异常处理器捕获
-            throw new RuntimeException("保存失败", e);
-        }
+        String message = stockService.addStock(stock);
+        return Result.success(message, stock);
     }
 
     /**
-     * 批量保存多只股票信息到同一个 JSON 文件
+     * 批量保存多只股票信息到数据库
      *
      * @param stocks 股票列表
      * @return 响应结果
      */
     @PostMapping("/save-batch")
     public Result<List<Stock>> saveBatchStocks(@RequestBody List<Stock> stocks) {
-        try {
-            String message = stockService.saveBatchStocks(stocks);
-            List<Stock> allStocks = stockService.getAllStocks();
-            return Result.success(message, allStocks);
-        } catch (IOException e) {
-            // IO异常会被全局异常处理器捕获
-            throw new RuntimeException("批量保存失败", e);
-        }
+        String message = stockService.saveBatchStocks(stocks);
+        List<Stock> allStocks = stockService.getAllStocks();
+        return Result.success(message, allStocks);
     }
 
     /**
@@ -95,12 +75,8 @@ public class StockController {
      */
     @GetMapping("/list")
     public Result<List<Stock>> getAllStocksList() {
-        try {
-            List<Stock> stocks = stockService.getAllStocks();
-            return Result.success("查询成功", stocks);
-        } catch (IOException e) {
-            throw new RuntimeException("查询失败", e);
-        }
+        List<Stock> stocks = stockService.getAllStocks();
+        return Result.success("查询成功", stocks);
     }
 
     /**
@@ -111,15 +87,11 @@ public class StockController {
      */
     @GetMapping("/{stockCode}")
     public Result<Stock> getStockByCode(@PathVariable String stockCode) {
-        try {
-            Stock stock = stockService.findByStockCode(stockCode);
-            if (stock != null) {
-                return Result.success("查询成功", stock);
-            }
-            return Result.notFound("股票不存在：" + stockCode);
-        } catch (IOException e) {
-            throw new RuntimeException("查询失败", e);
+        Stock stock = stockService.findByStockCode(stockCode);
+        if (stock != null) {
+            return Result.success("查询成功", stock);
         }
+        return Result.notFound("股票不存在：" + stockCode);
     }
 
     /**
@@ -133,13 +105,8 @@ public class StockController {
     public Result<Stock> updateStock(
             @PathVariable String stockCode,
             @RequestBody Stock stock) {
-        try {
-            String message = stockService.updateStock(stockCode, stock);
-            return Result.success(message, stock);
-        } catch (IOException e) {
-            // IO异常会被全局异常处理器捕获
-            throw new RuntimeException("更新失败", e);
-        }
+        String message = stockService.updateStock(stockCode, stock);
+        return Result.success(message, stock);
     }
 
     /**
@@ -150,13 +117,8 @@ public class StockController {
      */
     @DeleteMapping("/{stockCode}")
     public Result<Void> deleteStock(@PathVariable String stockCode) {
-        try {
-            String message = stockService.deleteStock(stockCode);
-            return Result.success(message, null);
-        } catch (IOException e) {
-            // IO异常会被全局异常处理器捕获
-            throw new RuntimeException("删除失败", e);
-        }
+        String message = stockService.deleteStock(stockCode);
+        return Result.success(message, null);
     }
 
     /**
@@ -167,12 +129,8 @@ public class StockController {
      */
     @GetMapping("/{stockCode}/exists")
     public Result<Boolean> checkStockExists(@PathVariable String stockCode) {
-        try {
-            boolean exists = stockService.exists(stockCode);
-            return Result.success("查询成功", exists);
-        } catch (IOException e) {
-            throw new RuntimeException("查询失败", e);
-        }
+        boolean exists = stockService.exists(stockCode);
+        return Result.success("查询成功", exists);
     }
 
 
@@ -180,33 +138,33 @@ public class StockController {
     /**
      * 获取所有股票的实时行情数据（包含盈亏计算）
      *
-     * @return 股票行情数据列表（含盈亏??
+     * @return 股票行情数据列表（含盈亏）
      */
     @GetMapping("/market-data/all")
     public Result<List<StockMarketData>> getAllMarketData() {
         try {
             List<StockMarketData> marketDataList = stockApiService.fetchAllStockMarketDataWithProfit();
             return Result.success("获取成功", marketDataList);
-        } catch (IOException e) {
-            return Result.internalError("获取行情数据成功失败: " + e.getMessage());
+        } catch (Exception e) {
+            return Result.internalError("获取行情数据失败: " + e.getMessage());
         }
     }
 
     /**
-     * 获取所有股票的实时行情数据和盈亏汇??
+     * 获取所有股票的实时行情数据和盈亏汇总
      *
-     * @return 股票行情数据列表和总盈??
+     * @return 股票行情数据列表和总盈亏
      */
     @GetMapping("/profit-summary")
     public Result<Map<String, Object>> getProfitSummary() {
         try {
             List<StockMarketData> marketDataList = stockApiService.fetchAllStockMarketDataWithProfit();
-
-            // 计算总盈??
+    
+            // 计算总盈亏
             java.math.BigDecimal totalProfitLoss = java.math.BigDecimal.ZERO;
             java.math.BigDecimal totalMarketValue = java.math.BigDecimal.ZERO;
             java.math.BigDecimal totalCost = java.math.BigDecimal.ZERO;
-
+    
             for (StockMarketData data : marketDataList) {
                 if (data.getProfitLoss() != null) {
                     totalProfitLoss = totalProfitLoss.add(data.getProfitLoss());
@@ -218,7 +176,7 @@ public class StockController {
                     totalCost = totalCost.add(data.getHoldingCost());
                 }
             }
-
+    
             Map<String, Object> summary = new HashMap<>();
             summary.put("stocks", marketDataList);
             summary.put("totalProfitLoss", totalProfitLoss);
@@ -226,15 +184,15 @@ public class StockController {
             summary.put("totalCost", totalCost);
             summary.put("profitLossPercent", totalCost.compareTo(java.math.BigDecimal.ZERO) > 0 ?
                     totalProfitLoss.multiply(new BigDecimal("100")).divide(totalCost, 2, java.math.RoundingMode.HALF_UP) : null);
-
+    
             return Result.success("获取成功", summary);
-        } catch (IOException e) {
+        } catch (Exception e) {
             return Result.internalError("获取盈亏数据失败: " + e.getMessage());
         }
     }
 
     /**
-     * 获取单只股票的实时行情数??
+     * 获取单只股票的实时行情数据
      *
      * @param stockCode 股票代码
      * @return 股票行情数据
@@ -247,15 +205,15 @@ public class StockController {
                 return Result.notFound("未找到股票行情数据：" + stockCode);
             }
             return Result.success("获取成功", marketData);
-        } catch (IOException e) {
-            return Result.internalError("获取行情数据成功失败: " + e.getMessage());
+        } catch (Exception e) {
+            return Result.internalError("获取行情数据失败: " + e.getMessage());
         }
     }
-
+    
     /**
      * 批量获取股票行情数据
      *
-     * @param stockCodes 股票代码列表（逗号分隔??
+     * @param stockCodes 股票代码列表（逗号分隔）
      * @return 股票行情数据列表
      */
     @GetMapping("/market-data/batch")
@@ -268,15 +226,15 @@ public class StockController {
                     codeList.add(code.trim());
                 }
             }
-
+    
             if (codeList.isEmpty()) {
-                return Result.badRequest("股票代码不能为空为空");
+                return Result.badRequest("股票代码不能为空");
             }
-
+    
             List<StockMarketData> marketDataList = stockApiService.fetchMarketData(codeList);
             return Result.success("获取成功", marketDataList);
-        } catch (IOException e) {
-            return Result.internalError("获取行情数据成功失败: " + e.getMessage());
+        } catch (Exception e) {
+            return Result.internalError("获取行情数据失败: " + e.getMessage());
         }
     }
 
@@ -289,31 +247,31 @@ public class StockController {
     public Result<List<Map<String, Object>>> getProfitOverview() {
         try {
             List<StockMarketData> marketDataList = stockApiService.fetchAllStockMarketDataWithProfit();
-
+    
             List<Map<String, Object>> overviewList = new ArrayList<>();
             BigDecimal totalTodayProfitLoss = BigDecimal.ZERO;
-
+    
             // 遍历所有股票，累加今日盈亏
             for (StockMarketData data : marketDataList) {
                 Map<String, Object> overview = new HashMap<>();
                 overview.put("stockName", data.getName());
                 overview.put("todayProfitLoss", data.getTodayProfitLoss());
                 overviewList.add(overview);
-
+    
                 // 累加今日盈亏
                 if (data.getTodayProfitLoss() != null) {
                     totalTodayProfitLoss = totalTodayProfitLoss.add(data.getTodayProfitLoss());
                 }
             }
-
-            // 添加汇总信息（只包含今日盈亏总和??
+    
+            // 添加汇总信息（只包含今日盈亏总和）
             Map<String, Object> summary = new HashMap<>();
             summary.put("stockName", "合计");
             summary.put("todayProfitLoss", totalTodayProfitLoss);
             overviewList.add(summary);
-
+    
             return Result.success("获取成功", overviewList);
-        } catch (IOException e) {
+        } catch (Exception e) {
             return Result.internalError("获取盈亏概览失败: " + e.getMessage());
         }
     }

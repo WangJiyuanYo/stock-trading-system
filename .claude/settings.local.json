@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile *)",
+      "WebSearch",
+      "Bash(mvn dependency:tree -pl trading-application -Dincludes=dev.langchain4j:*)",
+      "Bash(mvn dependency:tree -pl trading-application)",
+      "Bash(mvn dependency:resolve -pl trading-ai -DincludeArtifactIds=langchain4j-open-ai)",
+      "Bash(mvn dependency:tree -pl trading-ai)",
+      "Bash(jar tf *)",
+      "Bash(javap -p -cp langchain4j-spring-boot-starter-1.13.1-beta23.jar dev.langchain4j.spring.LangChain4jAutoConfig)",
+      "Bash(javap -verbose -cp langchain4j-spring-boot-starter-1.13.1-beta23.jar dev.langchain4j.spring.LangChain4jAutoConfig)",
+      "Bash(mvn dependency:resolve -pl trading-ai -DincludeArtifactIds=langchain4j-open-ai-spring-boot-starter)",
+      "Read(//c/Users/79443/.m2/repository/dev/langchain4j/langchain4j-agentic/1.13.1-beta23/**)",
+      "Bash(javap -verbose -cp langchain4j-agentic-1.13.1-beta23.jar dev.langchain4j.agentic.declarative.SupervisorAgent)",
+      "Bash(javap -p -cp langchain4j-agentic-1.13.1-beta23.jar dev.langchain4j.agentic.supervisor.SupervisorAgentServiceImpl)",
+      "Bash(javap -p -cp langchain4j-agentic-1.13.1-beta23.jar dev.langchain4j.agentic.Agent)",
+      "Bash(javap -p -cp langchain4j-agentic-1.13.1-beta23.jar dev.langchain4j.agentic.declarative.DeclarativeUtil)",
+      "Bash(mvn package *)",
+      "Bash(explorer . *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(javap -public -classpath oapi-sdk-2.5.3.jar com.lark.oapi.service.im.v1.model.CreateImageReq)",
+      "Bash(javap -public -classpath oapi-sdk-2.5.3.jar com.lark.oapi.service.im.v1.model.CreateImageResp)",
+      "Bash(javap -public -classpath oapi-sdk-2.5.3.jar com.lark.oapi.service.im.v1.model.CreateImageRespBody)",
+      "Bash(mvn dependency:tree -DoutputFile=/tmp/dep-tree.txt -DoutputType=text)",
+      "Bash(mvn dependency:analyze)",
+      "Bash(mvn dependency:analyze -pl trading-feishu)",
+      "Bash(mvn dependency:analyze -pl trading-roco)",
+      "Bash(mvn dependency:analyze -pl trading-common)",
+      "Bash(mvn clean *)",
+      "Bash(mvn dependency:analyze -pl trading-feishu -pl trading-notification)",
+      "Bash(mvn dependency:analyze -pl trading-notification -pl trading-feishu)",
+      "Bash(mvn test *)",
+      "Bash(find D:/codes/autoCodeWorkspace/trading-* -path \"*/src/main/java/*\" -name \"*.java\")"
+    ]
+  }
+}

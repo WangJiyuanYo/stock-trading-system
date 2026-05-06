@@ -4,6 +4,27 @@ server:
 spring:
   application:
     name: autoCodeWorkspace
+  
+  # SQLite数据库配置
+  datasource:
+    # Windows路径示例: jdbc:sqlite:D:/codes/stock.db 或 jdbc:sqlite:D:\\codes\\stock.db
+    # Linux路径示例: jdbc:sqlite:/root/stock_dir/db/stock.db
+    url: jdbc:sqlite:/root/stock_dir/db/stock.db
+    driver-class-name: org.sqlite.JDBC
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: icu.iseenu.stock.entity
+  configuration:
+    map-underscore-to-camel-case: true  # 下划线转驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印SQL日志
+  global-config:
+    db-config:
+      id-type: auto  # 主键自增
+      logic-delete-field: deleted  # 逻辑删除字段
+      logic-delete-value: 1  # 已删除
+      logic-not-delete-value: 0  # 未删除
 
 langchain4j:
   open-ai:

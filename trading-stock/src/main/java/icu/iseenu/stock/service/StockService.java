@@ -1,14 +1,15 @@
 package icu.iseenu.stock.service;
 
-import icu.iseenu.domain.entity.Stock;
-import icu.iseenu.domain.enums.StockTypeEnum;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import icu.iseenu.common.exception.ResourceNotFoundException;
 import icu.iseenu.common.exception.ValidationException;
-import icu.iseenu.infra.storage.JsonFileService;
+import icu.iseenu.domain.entity.Stock;
+import icu.iseenu.domain.enums.StockTypeEnum;
+import icu.iseenu.stock.converter.StockConverter;
+import icu.iseenu.stock.mapper.StockMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,10 +19,10 @@ import java.util.List;
 @Service
 public class StockService {
 
-    private final JsonFileService jsonFileService;
+    private final StockMapper stockMapper;
 
-    public StockService(JsonFileService jsonFileService) {
-        this.jsonFileService = jsonFileService;
+    public StockService(StockMapper stockMapper) {
+        this.stockMapper = stockMapper;
     }
 
     /**
@@ -68,46 +69,10 @@ public class StockService {
      * 获取所有股票列表
      *
      * @return 股票列表
-     * @throws IOException 读取文件失败
      */
-    @SuppressWarnings("unchecked")
-    public List<Stock> getAllStocks() throws IOException {
-        try {
-            if (jsonFileService.exists("stocks")) {
-                Object obj = jsonFileService.readJson("stocks", Object.class);
-                if (obj instanceof List) {
-                    List<?> list = (List<?>) obj;
-                    List<Stock> stocks = new ArrayList<>();
-                    for (Object item : list) {
-                        if (item instanceof java.util.Map) {
-                            @SuppressWarnings("rawtypes")
-                            java.util.Map map = (java.util.Map) item;
-                            Stock stock = new Stock();
-                            stock.setStockType((String) map.get("stockType"));
-                            stock.setStockCode((String) map.get("stockCode"));
-
-                            // 读取持仓数量
-                            Object qtyObj = map.get("holdingQuantity");
-                            if (qtyObj instanceof Number) {
-                                stock.setHoldingQuantity(((Number) qtyObj).longValue());
-                            }
-
-                            // 读取持仓价格
-                            Object priceObj = map.get("holdingPrice");
-                            if (priceObj instanceof Number) {
-                                stock.setHoldingPrice(new java.math.BigDecimal(priceObj.toString()));
-                            }
-
-                            stocks.add(stock);
-                        }
-                    }
-                    return stocks;
-                }
-            }
-        } catch (IOException e) {
-            throw new IOException("读取股票数据失败: " + e.getMessage(), e);
-        }
-        return new ArrayList<>();
+    public List<Stock> getAllStocks() {
+        List<icu.iseenu.stock.entity.Stock> stockEntities = stockMapper.selectList(null);
+        return StockConverter.toDomainList(stockEntities);
     }
 
     /**
@@ -116,36 +81,31 @@ public class StockService {
      * @param stock 股票对象
      * @return 操作结果信息
      * @throws ValidationException 验证失败时抛出
-     * @throws IOException 保存失败
      */
-    public String saveOrUpdateStock(Stock stock) throws IOException {
+    @Transactional
+    public String saveOrUpdateStock(Stock stock) {
         // 验证股票信息
         validateStock(stock);
 
         // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
 
-        // 获取所有股票
-        List<Stock> allStocks = getAllStocks();
+        // 转换为数据库实体
+        icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
 
         // 查找是否已存在该股票代码
-        boolean exists = false;
-        for (int i = 0; i < allStocks.size(); i++) {
-            if (allStocks.get(i).getStockCode().equals(stock.getStockCode())) {
-                allStocks.set(i, stock);
-                exists = true;
-                break;
-            }
+        icu.iseenu.stock.entity.Stock existingStock = stockMapper.selectByStockCode(stock.getStockCode());
+        
+        if (existingStock != null) {
+            // 更新
+            stockEntity.setId(existingStock.getId());
+            stockMapper.updateById(stockEntity);
+            return "股票信息更新成功";
+        } else {
+            // 新增
+            stockMapper.insert(stockEntity);
+            return "股票信息添加成功";
         }
-
-        if (!exists) {
-            allStocks.add(stock);
-        }
-
-        // 保存到JSON文件
-        jsonFileService.saveJson("stocks", allStocks);
-
-        return exists ? "股票信息更新成功" : "股票信息添加成功";
     }
 
     /**
@@ -154,31 +114,24 @@ public class StockService {
      * @param stock 股票对象
      * @return 操作结果信息
      * @throws ValidationException 股票代码已存在或验证失败
-     * @throws IOException 保存失败
      */
-    public String addStock(Stock stock) throws IOException {
+    @Transactional
+    public String addStock(Stock stock) {
         // 验证股票信息
         validateStock(stock);
 
         // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
 
-        // 获取所有股票
-        List<Stock> allStocks = getAllStocks();
-
         // 检查股票代码是否已存在
-        for (Stock existingStock : allStocks) {
-            if (existingStock.getStockCode().equals(stock.getStockCode())) {
-                throw new ValidationException("股票代码已存在：" + stock.getStockCode() +
-                        "，请使用更新接口或先删除原有记录");
-            }
+        if (stockMapper.existsByStockCode(stock.getStockCode())) {
+            throw new ValidationException("股票代码已存在：" + stock.getStockCode() +
+                    "，请使用更新接口或先删除原有记录");
         }
 
-        // 添加到列表
-        allStocks.add(stock);
-
-        // 保存到JSON文件
-        jsonFileService.saveJson("stocks", allStocks);
+        // 转换为数据库实体并插入
+        icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
+        stockMapper.insert(stockEntity);
 
         return "股票信息添加成功";
     }
@@ -189,9 +142,9 @@ public class StockService {
      * @param stocks 股票列表
      * @return 操作结果信息
      * @throws ValidationException 验证失败时抛出
-     * @throws IOException 保存失败
      */
-    public String saveBatchStocks(List<Stock> stocks) throws IOException {
+    @Transactional
+    public String saveBatchStocks(List<Stock> stocks) {
         if (stocks == null || stocks.isEmpty()) {
             throw new ValidationException("股票列表不能为空");
         }
@@ -207,34 +160,30 @@ public class StockService {
             stock.setStockCode(normalizeStockCode(stock.getStockCode()));
         }
 
-        // 获取所有股票
-        List<Stock> allStocks = getAllStocks();
-
         int updatedCount = 0;
         int addedCount = 0;
 
-        // 合并股票列表
-        for (Stock newStock : stocks) {
-            boolean exists = false;
-            for (int i = 0; i < allStocks.size(); i++) {
-                if (allStocks.get(i).getStockCode().equals(newStock.getStockCode())) {
-                    allStocks.set(i, newStock);
-                    updatedCount++;
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                allStocks.add(newStock);
+        // 逐个处理股票
+        for (Stock stock : stocks) {
+            icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
+            
+            // 查找是否已存在
+            icu.iseenu.stock.entity.Stock existingStock = stockMapper.selectByStockCode(stock.getStockCode());
+            
+            if (existingStock != null) {
+                // 更新
+                stockEntity.setId(existingStock.getId());
+                stockMapper.updateById(stockEntity);
+                updatedCount++;
+            } else {
+                // 新增
+                stockMapper.insert(stockEntity);
                 addedCount++;
             }
         }
 
-        // 保存到JSON文件
-        jsonFileService.saveJson("stocks", allStocks);
-
         return String.format("批量保存成功，更新 %d 只，新增 %d 只，共 %d 只股票",
-                updatedCount, addedCount, allStocks.size());
+                updatedCount, addedCount, updatedCount + addedCount);
     }
 
     /**
@@ -242,16 +191,10 @@ public class StockService {
      *
      * @param stockCode 股票代码
      * @return 股票对象，不存在则返回null
-     * @throws IOException 读取失败
      */
-    public Stock findByStockCode(String stockCode) throws IOException {
-        List<Stock> allStocks = getAllStocks();
-        for (Stock stock : allStocks) {
-            if (stock.getStockCode().equals(stockCode)) {
-                return stock;
-            }
-        }
-        return null;
+    public Stock findByStockCode(String stockCode) {
+        icu.iseenu.stock.entity.Stock stockEntity = stockMapper.selectByStockCode(stockCode);
+        return StockConverter.toDomain(stockEntity);
     }
 
     /**
@@ -262,25 +205,25 @@ public class StockService {
      * @return 操作结果信息
      * @throws ValidationException 股票不存在或验证失败
      * @throws ResourceNotFoundException 股票不存在
-     * @throws IOException 保存失败
      */
-    public String updateStock(String stockCode, Stock stock) throws IOException {
+    @Transactional
+    public String updateStock(String stockCode, Stock stock) {
         // 验证股票信息
         validateStock(stock);
 
-        List<Stock> allStocks = getAllStocks();
-
-        // 查找并更新
-        for (int i = 0; i < allStocks.size(); i++) {
-            if (allStocks.get(i).getStockCode().equals(stockCode)) {
-                stock.setStockCode(stockCode); // 确保股票代码一致
-                allStocks.set(i, stock);
-                jsonFileService.saveJson("stocks", allStocks);
-                return "股票信息更新成功";
-            }
+        // 查找股票是否存在
+        icu.iseenu.stock.entity.Stock existingStock = stockMapper.selectByStockCode(stockCode);
+        if (existingStock == null) {
+            throw new ResourceNotFoundException("股票不存在：" + stockCode);
         }
 
-        throw new ResourceNotFoundException("股票不存在：" + stockCode);
+        // 更新
+        icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
+        stockEntity.setId(existingStock.getId());
+        stockEntity.setStockCode(stockCode); // 确保股票代码一致
+        stockMapper.updateById(stockEntity);
+        
+        return "股票信息更新成功";
     }
 
     /**
@@ -289,27 +232,17 @@ public class StockService {
      * @param stockCode 股票代码
      * @return 操作结果信息
      * @throws ResourceNotFoundException 股票不存在
-     * @throws IOException 保存失败
      */
-    public String deleteStock(String stockCode) throws IOException {
-        List<Stock> allStocks = getAllStocks();
-
-        // 查找并删除
-        boolean removed = false;
-        for (int i = 0; i < allStocks.size(); i++) {
-            if (allStocks.get(i).getStockCode().equals(stockCode)) {
-                allStocks.remove(i);
-                removed = true;
-                break;
-            }
-        }
-
-        if (!removed) {
+    @Transactional
+    public String deleteStock(String stockCode) {
+        // 检查股票是否存在
+        icu.iseenu.stock.entity.Stock existingStock = stockMapper.selectByStockCode(stockCode);
+        if (existingStock == null) {
             throw new ResourceNotFoundException("股票不存在：" + stockCode);
         }
 
-        // 保存更新后的列表
-        jsonFileService.saveJson("stocks", allStocks);
+        // 逻辑删除（MyBatis-Plus会自动处理）
+        stockMapper.deleteById(existingStock.getId());
         return "股票信息删除成功";
     }
 
@@ -318,15 +251,8 @@ public class StockService {
      *
      * @param stockCode 股票代码
      * @return 是否存在
-     * @throws IOException 读取失败
      */
-    public boolean exists(String stockCode) throws IOException {
-        List<Stock> allStocks = getAllStocks();
-        for (Stock stock : allStocks) {
-            if (stock.getStockCode().equals(stockCode)) {
-                return true;
-            }
-        }
-        return false;
+    public boolean exists(String stockCode) {
+        return stockMapper.existsByStockCode(stockCode);
     }
 }

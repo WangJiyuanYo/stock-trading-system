@@ -1,5 +1,6 @@
 package icu.iseenu.application;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
@@ -12,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan(basePackages = {
     "icu.iseenu.*"
 })
+@MapperScan("icu.iseenu.stock.mapper")  // 扫描MyBatis-Plus Mapper接口
 @EnableScheduling // 启用定时任务功能
 public class StockTradeApplication {
 

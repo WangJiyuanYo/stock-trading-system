@@ -2,7 +2,7 @@ package icu.iseenu.stock.api;
 
 import icu.iseenu.domain.entity.Stock;
 import icu.iseenu.domain.entity.StockMarketData;
-import icu.iseenu.infra.storage.JsonFileService;
+import icu.iseenu.stock.service.StockService;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -23,23 +23,23 @@ public class StockApiService {
     private static final String API_URL = "https://hq.sinajs.cn/list=";
     
     private final HttpClient httpClient;
-    private final JsonFileService jsonFileService;
+    private final StockService stockService;
 
-    public StockApiService(JsonFileService jsonFileService) {
-        this.jsonFileService = jsonFileService;
+    public StockApiService(StockService stockService) {
+        this.stockService = stockService;
         this.httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
     }
 
     /**
-     * ??JSON 文件读取所有股票代码并获取行情数据（包含盈亏计算）
+     * 从数据库读取所有股票代码并获取行情数据（包含盈亏计算）
      *
-     * @return 股票行情数据列表（含盈亏??
+     * @return 股票行情数据列表（含盈亏）
      */
-    public List<StockMarketData> fetchAllStockMarketDataWithProfit() throws IOException {
-        // ??JSON 文件读取所有股票（包含持仓信息??
-        List<Stock> allStocks = getAllStocks();
+    public List<StockMarketData> fetchAllStockMarketDataWithProfit() {
+        // 从数据库读取所有股票（包含持仓信息）
+        List<Stock> allStocks = stockService.getAllStocks();
         
         if (allStocks.isEmpty()) {
             return new ArrayList<>();
@@ -54,9 +54,14 @@ public class StockApiService {
         }
 
         // 批量获取行情数据
-        List<StockMarketData> marketDataList = fetchMarketData(stockCodes);
+        List<StockMarketData> marketDataList;
+        try {
+            marketDataList = fetchMarketData(stockCodes);
+        } catch (IOException e) {
+            throw new RuntimeException("获取行情数据失败", e);
+        }
         
-        // 合并持仓信息并计算盈??
+        // 合并持仓信息并计算盈亏
         mergeHoldingInfo(marketDataList, allStocks);
         
         return marketDataList;
@@ -67,7 +72,7 @@ public class StockApiService {
      */
     private void mergeHoldingInfo(List<StockMarketData> marketDataList, List<Stock> allStocks) {
         for (StockMarketData marketData : marketDataList) {
-            // 移除市场前缀，匹配股票代??
+            // 移除市场前缀，匹配股票代码
             String pureCode = removeMarketPrefix(marketData.getStockCode());
             
             for (Stock stock : allStocks) {
@@ -107,14 +112,19 @@ public class StockApiService {
      * 根据股票代码获取行情数据（包含盈亏计算）
      *
      * @param stockCode 股票代码
-     * @return 股票行情数据（含盈亏??
+     * @return 股票行情数据（含盈亏）
      */
-    public StockMarketData fetchStockMarketDataWithProfit(String stockCode) throws IOException {
-        StockMarketData marketData = fetchStockMarketData(stockCode);
+    public StockMarketData fetchStockMarketDataWithProfit(String stockCode) {
+        StockMarketData marketData;
+        try {
+            marketData = fetchStockMarketData(stockCode);
+        } catch (IOException e) {
+            throw new RuntimeException("获取行情数据失败", e);
+        }
         
         if (marketData != null) {
             // 获取持仓信息
-            List<Stock> allStocks = getAllStocks();
+            List<Stock> allStocks = stockService.getAllStocks();
             String pureCode = removeMarketPrefix(marketData.getStockCode());
             
             for (Stock stock : allStocks) {
@@ -155,10 +165,10 @@ public class StockApiService {
             return new ArrayList<>();
         }
 
-        // 构建股票代码字符串（逗号分隔??
+        // 构建股票代码字符串（逗号分隔）
         String codesParam = String.join(",", stockCodes);
         
-        // 构建完整??URL（需要根据市场添加前缀??
+        // 构建完整URL（需要根据市场添加前缀）
         String fullUrl = buildStockUrl(codesParam);
         
         try {
@@ -206,9 +216,9 @@ public class StockApiService {
     }
 
     /**
-     * 格式化股票代码（添加市场前缀??
-     * A 股：sh/sz + 6 位代??
-     * 港股：hk + 5 位代??
+     * 格式化股票代码（添加市场前缀）
+     * A 股：sh/sz + 6 位代码
+     * 港股：hk + 5 位代码
      * 美股：gb_ + 代码（小写）
      */
     private String formatStockCode(String code) {
@@ -221,17 +231,17 @@ public class StockApiService {
         // 判断 A 股市场（6 位数字）
         if (code.matches("\\d{6}")) {
             char firstChar = code.charAt(0);
-            // 沪市???? 开??
+            // 沪市（6 开头）
             if (firstChar == '6' || firstChar == '5') {
-                return "sh" + code; // 沪市（包??ETF??
+                return "sh" + code; // 沪市（包括ETF）
             } else if (firstChar == '9') {
                 return "sh" + code; // 沪市
             } else {
-                return "sz" + code; // 深市?????? 开头）
+                return "sz" + code; // 深市（0 开头）
             }
         }
         
-        // 港股（通常??5 位数字）
+        // 港股（通常5 位数字）
         if (code.matches("\\d{5}")) {
             return "hk" + code;
         }
@@ -272,7 +282,7 @@ public class StockApiService {
 
     /**
      * 解析单只股票数据
-     * 格式：var hq_str_sh600000="浦发银行??.55,8.54,8.57,8.58,8.53..."
+     * 格式：var hq_str_sh600000="浦发银行,8.55,8.54,8.57,8.58,8.53..."
      */
     private StockMarketData parseSingleStock(String line) {
         try {
@@ -284,7 +294,7 @@ public class StockApiService {
                 return null;
             }
 
-            // 提取股票代码（如 sh600000??
+            // 提取股票代码（如 sh600000）
             String stockCodeWithPrefix = line.substring(0, eqIndex).replace("var hq_str_", "").trim();
             
             // 提取数据部分
@@ -301,7 +311,7 @@ public class StockApiService {
             
             // 今日开盘价
             data.setTodayOpen(parseBigDecimal(fields[1]));
-            // 昨日收盘??
+            // 昨日收盘价
             data.setYesterdayClose(parseBigDecimal(fields[2]));
             // 当前价格
             data.setCurrentPrice(parseBigDecimal(fields[3]));
@@ -313,9 +323,9 @@ public class StockApiService {
             data.setBidPrice(parseBigDecimal(fields[6]));
             // 竞卖价（卖一价）
             data.setAskPrice(parseBigDecimal(fields[7]));
-            // 成交的股票数（手??
+            // 成交的股票数（手）
             data.setVolume(parseLong(fields[8]));
-            // 成交金额（元??
+            // 成交金额（元）
             data.setTurnover(parseBigDecimal(fields[9]));
             // 买一申报数量
             data.setBidQty1(parseLong(fields[10]));
@@ -369,7 +379,7 @@ public class StockApiService {
     }
 
     /**
-     * 辅助方法：解??BigDecimal
+     * 辅助方法：解析BigDecimal
      */
     private java.math.BigDecimal parseBigDecimal(String value) {
         try {
@@ -383,7 +393,7 @@ public class StockApiService {
     }
 
     /**
-     * 辅助方法：解??Long
+     * 辅助方法：解析Long
      */
     private Long parseLong(String value) {
         try {
@@ -397,41 +407,11 @@ public class StockApiService {
     }
 
     /**
-     * ??JSON 文件读取所有股票的辅助方法
+     * 从数据库读取所有股票的辅助方法（已废弃，直接使用stockService）
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
-    private List<Stock> getAllStocks() throws IOException {
-        if (jsonFileService.exists("stocks")) {
-            Object obj = jsonFileService.readJson("stocks", Object.class);
-            if (obj instanceof List) {
-                List<?> list = (List<?>) obj;
-                List<Stock> stocks = new ArrayList<>();
-                for (Object item : list) {
-                    if (item instanceof java.util.Map) {
-                        @SuppressWarnings("rawtypes")
-                        java.util.Map map = (java.util.Map) item;
-                        Stock stock = new Stock();
-                        stock.setStockType((String) map.get("stockType"));
-                        stock.setStockCode((String) map.get("stockCode"));
-                        
-                        // 读取持仓数量
-                        Object qtyObj = map.get("holdingQuantity");
-                        if (qtyObj instanceof Number) {
-                            stock.setHoldingQuantity(((Number) qtyObj).longValue());
-                        }
-                        
-                        // 读取持仓价格
-                        Object priceObj = map.get("holdingPrice");
-                        if (priceObj instanceof Number) {
-                            stock.setHoldingPrice(new java.math.BigDecimal(priceObj.toString()));
-                        }
-                        
-                        stocks.add(stock);
-                    }
-                }
-                return stocks;
-            }
-        }
-        return new ArrayList<>();
+    private List<Stock> getAllStocks() {
+        return stockService.getAllStocks();
     }
 }

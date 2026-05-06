@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -105,8 +104,6 @@ public class StockDataScheduledTask {
 
             log.info("========== 定时任务执行完成 ==========");
 
-        } catch (IOException e) {
-            log.error("执行股票数据定时任务失败：{}", e.getMessage(), e);
         } catch (Exception e) {
             log.error("执行股票数据定时任务发生异常：{}", e.getMessage(), e);
         }
@@ -184,9 +181,6 @@ public class StockDataScheduledTask {
                     marketDataList.size(),
                     totalTodayProfitLoss.setScale(2, BigDecimal.ROUND_HALF_UP));
 
-        } catch (IOException e) {
-            log.error("执行股票数据手动任务失败：{}", e.getMessage(), e);
-            return "执行失败: " + e.getMessage();
         } catch (Exception e) {
             log.error("执行股票数据手动任务发生异常：{}", e.getMessage(), e);
             return "执行异常: " + e.getMessage();
