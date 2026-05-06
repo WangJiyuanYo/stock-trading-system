@@ -19,35 +19,24 @@
     <dependencies>
         <dependency>
             <groupId>icu.iseenu</groupId>
-            <artifactId>trading-domain</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>icu.iseenu</groupId>
-            <artifactId>trading-infrastructure</artifactId>
+            <artifactId>trading-notification</artifactId>
         </dependency>
         <dependency>
             <groupId>icu.iseenu</groupId>
             <artifactId>trading-ai</artifactId>
         </dependency>
-        
-        <!-- LangChain4j -->
         <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
+            <groupId>icu.iseenu</groupId>
+            <artifactId>trading-roco</artifactId>
         </dependency>
-        
-        <!-- 飞书 SDK -->
+
         <dependency>
             <groupId>com.larksuite.oapi</groupId>
             <artifactId>oapi-sdk</artifactId>
-            <version>2.5.3</version>
-            <exclusions>
-                <!-- 排除 commons-logging，使用 Spring 的 spring-jcl -->
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.langchain4j.agent.tool.Tool;
 import icu.iseenu.roco.config.AppConfig;
 import icu.iseenu.roco.model.Product;
-import icu.iseenu.roco.service.HtmlGenerator;
-import icu.iseenu.roco.service.ImageUploadService;
-import icu.iseenu.roco.service.ScreenshotService;
 import icu.iseenu.roco.util.HttpClientUtil;
 import icu.iseenu.roco.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +23,7 @@ public class RocoTools {
         this.config = config;
     }
 
-    @Tool("查询洛克王国远行商人当前售卖的商品信息")
+    @Tool("查询洛克王国远行商人当前售卖的商品信息，仅返回文字摘要")
     public String queryRocoMerchant() {
         log.info("调用 queryRocoMerchant 接口");
 
@@ -77,48 +74,10 @@ public class RocoTools {
                 result.append("当前暂无商品");
             }
 
-            // 生成截图并上传图床
-            String imageUrl = generateScreenshot(templateData);
-            if (imageUrl != null) {
-                result.append("\n\n![商品详情](").append(imageUrl).append(")");
-            }
-
             return result.toString();
         } catch (Exception e) {
             log.error("查询洛克王国远行商人失败", e);
             return "查询洛克王国远行商人失败: " + e.getMessage();
-        }
-    }
-
-    private String generateScreenshot(icu.iseenu.roco.model.TemplateData templateData) {
-        if (!config.hasImgbbKey()) {
-            log.info("未配置 imgbb-key，跳过截图生成");
-            return null;
-        }
-
-        try {
-            String outputDir = System.getProperty("user.dir");
-            HtmlGenerator htmlGenerator = new HtmlGenerator(outputDir, AppConfig.TEMP_RENDER_FILE);
-            String htmlPath = htmlGenerator.generateHtml(templateData);
-
-            if (htmlPath == null) {
-                return null;
-            }
-
-            ScreenshotService screenshotService = new ScreenshotService(AppConfig.SCREENSHOT_FILE);
-            String screenshotPath = screenshotService.captureScreenshot(htmlPath);
-
-            if (screenshotPath == null) {
-                return null;
-            }
-
-            ImageUploadService uploadService = new ImageUploadService(config);
-            String imageUrl = uploadService.uploadToImgbb(screenshotPath);
-            log.info("截图上传成功: {}", imageUrl);
-            return imageUrl;
-        } catch (Exception e) {
-            log.error("生成截图失败", e);
-            return null;
         }
     }
 }

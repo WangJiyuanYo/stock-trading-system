@@ -21,5 +21,9 @@
             <groupId>icu.iseenu</groupId>
             <artifactId>trading-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
     </dependencies>
 </project>

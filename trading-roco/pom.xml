@@ -17,47 +17,22 @@
     <description>洛克王国远行商人提醒模块</description>
 
     <dependencies>
-        <dependency>
-            <groupId>icu.iseenu</groupId>
-            <artifactId>trading-common</artifactId>
-        </dependency>
-        
-        <!-- 通知服务 -->
+        <!-- 通知服务 (传递引入 trading-domain → trading-common) -->
         <dependency>
             <groupId>icu.iseenu</groupId>
             <artifactId>trading-notification</artifactId>
         </dependency>
-        
-        <!-- HTTP Client -->
+
+        <!-- HTTP Client (httpcore5/httpcore5-h2 由 httpclient5 传递引入) -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents.core5</groupId>
-            <artifactId>httpcore5</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents.core5</groupId>
-            <artifactId>httpcore5-h2</artifactId>
-        </dependency>
-
-        <!-- JSON Processing -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- Playwright for Browser Automation -->
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
-        </dependency>
-
-        <!-- Apache Commons IO -->
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
         </dependency>
     </dependencies>
 </project>

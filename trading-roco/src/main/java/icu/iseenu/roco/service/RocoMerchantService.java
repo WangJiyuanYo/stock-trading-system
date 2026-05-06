@@ -5,16 +5,11 @@ import icu.iseenu.notification.NotificationService;
 import icu.iseenu.roco.config.AppConfig;
 import icu.iseenu.roco.model.Product;
 import icu.iseenu.roco.model.TemplateData;
-import icu.iseenu.roco.util.HttpClientUtil;
-import icu.iseenu.roco.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -26,9 +21,12 @@ public class RocoMerchantService {
 
     @Autowired
     private AppConfig config;
-    
+
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private MerchantScreenshotAsyncService screenshotAsyncService;
 
     /**
      * 执行监控流程
@@ -44,14 +42,14 @@ public class RocoMerchantService {
             }
 
             // 1. 获取游戏数据
-            JsonNode rawData = fetchGameData();
+            JsonNode rawData = screenshotAsyncService.fetchGameData();
             if (rawData == null) {
                 sendErrorNotification("无法获取游戏数据");
                 return;
             }
 
             // 2. 处理数据
-            TemplateData processedData = TimeUtil.processDataForTemplate(rawData);
+            TemplateData processedData = screenshotAsyncService.processData(rawData);
 
             // 3. 构建推送内容
             List<Product> products = processedData.getProducts();
@@ -66,36 +64,7 @@ public class RocoMerchantService {
             }
 
             // 4. 生成HTML并截图上传
-            String imageUrl = null;
-            if (processedData.getProductCount() > 0) {
-                try {
-                    // 使用当前工作目录作为输出目录
-                    String outputDir = System.getProperty("user.dir");
-                    HtmlGenerator htmlGenerator = new HtmlGenerator(
-                            outputDir,
-                            AppConfig.TEMP_RENDER_FILE
-                    );
-                    String htmlPath = htmlGenerator.generateHtml(processedData);
-
-                    if (htmlPath != null) {
-                        // 截图
-                        ScreenshotService screenshotService = new ScreenshotService(
-                                AppConfig.SCREENSHOT_FILE
-                        );
-                        String screenshotPath = screenshotService.captureScreenshot(htmlPath);
-
-                        // 上传到图床
-                        if (screenshotPath != null && config.hasImgbbKey()) {
-                            ImageUploadService uploadService = new ImageUploadService(config);
-                            imageUrl = uploadService.uploadToImgbb(screenshotPath);
-                            log.info("✅ 图片上传成功: {}", imageUrl);
-                        }
-                    }
-
-                } catch (IOException e) {
-                    log.error("❌ HTML生成或截图失败", e);
-                }
-            }
+            String imageUrl = screenshotAsyncService.generateAndUploadScreenshot(processedData);
 
             // 5. 发送推送通知
             String alertMessage = "📢 远行商人已刷新\n" + pushBody;
@@ -108,39 +77,6 @@ public class RocoMerchantService {
 
         } catch (Exception e) {
             log.error("❌ 监控流程异常", e);
-        }
-    }
-
-    /**
-     * 获取游戏数据
-     */
-    private JsonNode fetchGameData() {
-        try {
-            Map<String, String> headers = new HashMap<>();
-            headers.put("X-API-Key", config.getRocomApiKey());
-
-            String response = HttpClientUtil.sendGet(
-                    AppConfig.GAME_API_URL,
-                    headers
-            );
-
-            JsonNode jsonResponse = HttpClientUtil.parseJson(response);
-
-            // 检查响应码
-            int code = jsonResponse.has("code") ? jsonResponse.get("code").asInt() : -1;
-            if (code != 0) {
-                String message = jsonResponse.has("message") ?
-                        jsonResponse.get("message").asText() : "未知错误";
-                log.error("API返回错误: {}", message);
-                return null;
-            }
-
-            // 返回data字段
-            return jsonResponse.has("data") ? jsonResponse.get("data") : null;
-
-        } catch (IOException e) {
-            log.error("❌ 请求游戏API失败", e);
-            return null;
         }
     }
 

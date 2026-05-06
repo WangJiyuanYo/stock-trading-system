@@ -31,16 +31,18 @@ feishu:
   app-secret: ${FEISHU_APP_SECRET:}  # 飞书 App Secret，可选
 
 notification:
-  enabled-channels: serverchan,notifyme
+  enabled-channels: serverchan,notifyme,feishu
   serverchan:
     sckey: ${SERVERCHAN_SENDKEY}
   notifyme:
     uuid: ${NOTIFYME_UUID}
     base-url: https://notifyme-server.wzn556.top/?
+  feishu:
+    webhook-url: ${FEISHU_WEBHOOK_URL:}
 
 # 洛克王国远行商人配置
 roco:
   rocom-api-key: ${ROCOM_API_KEY:}  # 游戏API密钥，环境变量 ROCOM_API_KEY
   imgbb-key: ${IMGBB_API_KEY:}  # 图床API密钥，环境变量 IMGBB_API_KEY
   notifyme-uuid: ${NOTIFYME_UUID:}  # Notify.me UUID
-  cron: "0 5 8,12,16,20 * * ?"  # 定时任务cron表达式
+  cron: "0 5 8,12,16,20,22 * * ?"  # 定时任务cron表达式

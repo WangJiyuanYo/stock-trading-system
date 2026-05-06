@@ -51,24 +51,58 @@ public class TimeUtil {
      */
     public static RoundInfo getRoundInfo() {
         ZonedDateTime now = getBeijingTime();
-        ZonedDateTime startTime = now.withHour(8).withMinute(0).withSecond(0).withNano(0);
+        int currentHour = now.getHour();
         
-        // 如果当前时间早于8点，返回未开放
-        if (now.isBefore(startTime)) {
-            return new RoundInfo("未开放", 4, "尚未开市");
+        // 如果当前时间在 00:00-08:00 之间，属于尚未开市
+        if (currentHour < 8) {
+            // 计算距离今天8点的剩余时间
+            ZonedDateTime todayStart = now.withHour(8).withMinute(0).withSecond(0).withNano(0);
+            long remainingMinutes = java.time.Duration.between(now, todayStart).toMinutes();
+            long hours = remainingMinutes / 60;
+            long minutes = remainingMinutes % 60;
+            String countdownStr = hours + "小时" + minutes + "分钟";
+            return new RoundInfo("未开放", 4, countdownStr);
         }
         
-        // 每4小时一轮: 08-12, 12-16, 16-20, 20-00
-        long deltaSeconds = java.time.Duration.between(startTime, now).getSeconds();
+        // 如果当前时间在 20:00-24:00 之间，今日已收市
+        if (currentHour >= 20) {
+            // 计算距离明天8点的剩余时间
+            ZonedDateTime tomorrowStart = now.plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0);
+            long remainingMinutes = java.time.Duration.between(now, tomorrowStart).toMinutes();
+            long hours = remainingMinutes / 60;
+            long minutes = remainingMinutes % 60;
+            String countdownStr = hours + "小时" + minutes + "分钟";
+            return new RoundInfo(4, 4, "明日" + countdownStr + "后开市");
+        }
+        
+        // 计算当前轮次：08-12为第1轮，12-16为第2轮，16-20为第3轮，20-24为第4轮
+        ZonedDateTime todayStart = now.withHour(8).withMinute(0).withSecond(0).withNano(0);
+        long deltaSeconds = java.time.Duration.between(todayStart, now).getSeconds();
         int roundIndex = (int) (deltaSeconds / (4 * 3600)) + 1;
         
-        if (roundIndex > 4) {
-            return new RoundInfo(4, 4, "今日已收市");
-        }
+        // 确保轮次在1-4范围内
+        roundIndex = Math.max(1, Math.min(4, roundIndex));
         
-        // 计算本轮剩余时间
-        ZonedDateTime roundEnd = startTime.plusHours(roundIndex * 4);
+        // 计算本轮结束时间
+        ZonedDateTime roundEnd = todayStart.plusHours(roundIndex * 4);
         long remainingSeconds = java.time.Duration.between(now, roundEnd).getSeconds();
+        
+        // 如果剩余时间为负数，说明已经过了本轮结束时间，进入下一轮或已收市
+        if (remainingSeconds < 0) {
+            if (roundIndex < 4) {
+                roundIndex++;
+                roundEnd = todayStart.plusHours(roundIndex * 4);
+                remainingSeconds = java.time.Duration.between(now, roundEnd).getSeconds();
+            } else {
+                // 第4轮已结束
+                ZonedDateTime tomorrowStart = now.plusDays(1).withHour(8).withMinute(0).withSecond(0).withNano(0);
+                long remainingMinutes = java.time.Duration.between(now, tomorrowStart).toMinutes();
+                long hours = remainingMinutes / 60;
+                long minutes = remainingMinutes % 60;
+                String countdownStr = hours + "小时" + minutes + "分钟";
+                return new RoundInfo(4, 4, "明日" + countdownStr + "后开市");
+            }
+        }
         
         long hours = remainingSeconds / 3600;
         long minutes = (remainingSeconds % 3600) / 60;

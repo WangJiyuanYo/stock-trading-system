@@ -1,6 +1,5 @@
 package icu.iseenu.ai.mcp;
 
-import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;

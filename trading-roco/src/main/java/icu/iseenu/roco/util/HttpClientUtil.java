@@ -36,6 +36,7 @@ public class HttpClientUtil {
             
             // 设置超时
             request.setConfig(org.apache.hc.client5.http.config.RequestConfig.custom()
+                    .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setConnectionRequestTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .build());
@@ -69,6 +70,7 @@ public class HttpClientUtil {
             
             // 设置超时
             request.setConfig(org.apache.hc.client5.http.config.RequestConfig.custom()
+                    .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setConnectionRequestTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .build());
@@ -106,6 +108,7 @@ public class HttpClientUtil {
             
             // 设置超时
             request.setConfig(org.apache.hc.client5.http.config.RequestConfig.custom()
+                    .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setConnectionRequestTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(TIMEOUT_MS))
                     .build());

@@ -27,7 +27,12 @@ public class NotificationProperties {
      * NotifyMe 配置
      */
     private NotifyMe notifyme = new NotifyMe();
-    
+
+    /**
+     * 飞书配置
+     */
+    private Feishu feishu = new Feishu();
+
     @Data
     public static class ServerChan {
         /**
@@ -35,17 +40,26 @@ public class NotificationProperties {
          */
         private String sckey = "";
     }
-    
+
     @Data
     public static class NotifyMe {
         /**
          * NotifyMe UUID
          */
         private String uuid = "";
-        
+
         /**
          * NotifyMe 服务地址
          */
         private String baseUrl = "https://notifyme-server.wzn556.top/?";
+    }
+
+    @Data
+    public static class Feishu {
+        /**
+         * 飞书机器人 Webhook URL（用于广播通知到群聊）
+         * 例如：https://open.feishu.cn/open-apis/bot/v2/hook/xxx
+         */
+        private String webhookUrl = "";
     }
 }
