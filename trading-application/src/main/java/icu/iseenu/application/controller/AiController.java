@@ -2,6 +2,7 @@ package icu.iseenu.application.controller;
 
 import icu.iseenu.ai.agent.assistant.HolidayAssistant;
 import icu.iseenu.ai.agent.assistant.WriteJsonFileAssistant;
+import icu.iseenu.roco.service.FarmService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ public class AiController {
 
     private HolidayAssistant holidayAssistant;
     private WriteJsonFileAssistant writeJsonFileAssistant;
+    private FarmService farmService;
 
     @Autowired(required = false)
     public void setHolidayAssistant(HolidayAssistant holidayAssistant) {
@@ -32,6 +34,11 @@ public class AiController {
     @Autowired(required = false)
     public void setWriteJsonFileAssistant(WriteJsonFileAssistant writeJsonFileAssistant) {
         this.writeJsonFileAssistant = writeJsonFileAssistant;
+    }
+
+    @Autowired(required = false)
+    public void setFarmService(FarmService farmService) {
+        this.farmService = farmService;
     }
 
     @GetMapping("/fetch-holiday")
@@ -45,5 +52,16 @@ public class AiController {
         String fetchHoliday = holidayAssistant.fetchHoliday(year);
         return writeJsonFileAssistant.writJsonFiles(fetchHoliday, calenderPath,
                 HOLIDAY_JSON_FILE + year, JSON_EXTENSION);
+    }
+
+    @GetMapping("/query-farm")
+    public String queryFarm(@RequestParam String uid) {
+        if (farmService == null) {
+            return "FarmService 未初始化";
+        }
+        if (uid == null || uid.trim().isEmpty()) {
+            return "请输入玩家UID";
+        }
+        return farmService.getFarmData(uid.trim());
     }
 }

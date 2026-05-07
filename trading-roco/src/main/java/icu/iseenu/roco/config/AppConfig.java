@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * 洛克王国远行商人配置类
  */
@@ -14,6 +16,7 @@ public class AppConfig {
     
     // API配置
     public static final String GAME_API_URL = "https://wegame.shallow.ink/api/v1/games/rocom/merchant/info";
+    public static final String HOME_INFO_API_URL = "https://wegame.shallow.ink/api/v1/games/rocom/ingame/home/info";
     public static final String NOTIFYME_SERVER = "https://notifyme-server.wzn556.top/api/send";
     public static final String IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload";
     
@@ -27,6 +30,10 @@ public class AppConfig {
     private String rocomApiKey;
     private String imgbbKey;
     private String notifymeUuid;
+
+    // 家园监控配置
+    private List<String> farmUids;
+    private String farmCron = "0 0 * * * ?";
     
     // 验证配置是否完整
     public boolean hasRocomApiKey() {

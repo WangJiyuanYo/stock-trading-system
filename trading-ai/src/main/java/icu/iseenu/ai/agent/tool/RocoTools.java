@@ -1,9 +1,11 @@
 package icu.iseenu.ai.agent.tool;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import icu.iseenu.roco.config.AppConfig;
 import icu.iseenu.roco.model.Product;
+import icu.iseenu.roco.service.FarmService;
 import icu.iseenu.roco.util.HttpClientUtil;
 import icu.iseenu.roco.util.TimeUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +20,11 @@ import java.util.Map;
 public class RocoTools {
 
     private final AppConfig config;
+    private final FarmService farmService;
 
-    public RocoTools(AppConfig config) {
+    public RocoTools(AppConfig config, FarmService farmService) {
         this.config = config;
+        this.farmService = farmService;
     }
 
     @Tool("查询洛克王国远行商人当前售卖的商品信息，仅返回文字摘要")
@@ -79,5 +83,11 @@ public class RocoTools {
             log.error("查询洛克王国远行商人失败", e);
             return "查询洛克王国远行商人失败: " + e.getMessage();
         }
+    }
+
+    @Tool("查询洛克王国家园种植信息，传入玩家UID，返回家园等级、种植作物及预计成熟时间")
+    public String queryFarmInfo(@P("玩家UID") String uid) {
+        log.info("调用 queryFarmInfo 接口, uid={}", uid);
+        return farmService.getFarmData(uid);
     }
 }

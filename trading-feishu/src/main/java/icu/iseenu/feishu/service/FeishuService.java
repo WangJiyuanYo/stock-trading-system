@@ -60,8 +60,8 @@ public class FeishuService {
 
         log.info("飞书消息: chatId={}, text={}", chatId, userText);
 
-        boolean isRocoQuery = isRocoMerchantQuery(userText);
-        if (isRocoQuery) {
+        boolean isMerchantQuery = isRocoMerchantQuery(userText);
+        if (isMerchantQuery) {
             messageSender.sendMarkdownMessage(senderId, "⏳ 正在查询远行商人数据，请稍候...");
         }
 
@@ -69,7 +69,7 @@ public class FeishuService {
             String reply = supervisorAgents.chat(chatId, userText);
             log.info("Agent 回复: {}", reply);
 
-            if (isRocoQuery) {
+            if (isMerchantQuery) {
                 triggerAsyncScreenshot(senderId);
             } else {
                 messageSender.sendMarkdownMessage(senderId, reply);
@@ -82,9 +82,8 @@ public class FeishuService {
 
     private boolean isRocoMerchantQuery(String userText) {
         return userText != null && (userText.contains("远行商人")
-                || userText.contains("洛克王国")
-                || userText.contains("roco")
-                || userText.contains("商人"));
+                || userText.contains("商人")
+                || userText.contains("商品"));
     }
 
     private void triggerAsyncScreenshot(String senderId) {
