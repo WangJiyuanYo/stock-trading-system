@@ -4,7 +4,9 @@ server:
 spring:
   application:
     name: autoCodeWorkspace
-  
+
+
+
   # SQLite数据库配置
   datasource:
     # Windows路径示例: jdbc:sqlite:D:/codes/stock.db 或 jdbc:sqlite:D:\\codes\\stock.db
@@ -66,7 +68,7 @@ roco:
   rocom-api-key: ${ROCOM_API_KEY:}  # 游戏API密钥，环境变量 ROCOM_API_KEY
   imgbb-key: ${IMGBB_API_KEY:}  # 图床API密钥，环境变量 IMGBB_API_KEY
   notifyme-uuid: ${NOTIFYME_UUID:}  # Notify.me UUID
-  cron: "0 5 8,12,16,20,22 * * ?"  # 定时任务cron表达式
+  cron: "0 5 8,12,16,20 * * ?"  # 定时任务cron表达式
   # 家园种植监控
   farm-uids:
     - 503689802

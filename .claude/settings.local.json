@@ -33,7 +33,27 @@
       "Bash(mvn dependency:analyze -pl trading-feishu -pl trading-notification)",
       "Bash(mvn dependency:analyze -pl trading-notification -pl trading-feishu)",
       "Bash(mvn test *)",
-      "Bash(find D:/codes/autoCodeWorkspace/trading-* -path \"*/src/main/java/*\" -name \"*.java\")"
+      "Bash(find D:/codes/autoCodeWorkspace/trading-* -path \"*/src/main/java/*\" -name \"*.java\")",
+      "Bash(git branch *)",
+      "Bash(git reset *)",
+      "Bash(scp *)",
+      "Bash(ssh *)",
+      "Bash(bash *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/scripts/deploy.sh\" D:/codes/autoCodeWorkspace",
+            "if": "Bash(mvn .*package.*)",
+            "timeout": 120
+          }
+        ]
+      }
     ]
   }
 }

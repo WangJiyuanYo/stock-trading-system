@@ -30,6 +30,7 @@
         <module>trading-feishu</module>
         <module>trading-ai</module>
         <module>trading-roco</module>
+
         <module>trading-application</module>
     </modules>
 
@@ -100,7 +101,7 @@
                 <artifactId>trading-roco</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            
+
             <!-- 外部依赖版本管理 -->
             <dependency>
                 <groupId>com.microsoft.playwright</groupId>

@@ -47,6 +47,12 @@ public interface StockMapper extends BaseMapper<Stock> {
     boolean existsByStockCode(@Param("stockCode") String stockCode);
 
     /**
+     * 根据股票代码查询（忽略逻辑删除，查所有记录）
+     */
+    @Select("SELECT * FROM stocks WHERE stock_code = #{stockCode}")
+    Stock selectByStockCodeAny(@Param("stockCode") String stockCode);
+
+    /**
      * 根据股票代码删除（逻辑删除）
      * @param stockCode 股票代码
      * @return 删除的行数

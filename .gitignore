@@ -48,3 +48,6 @@ data/
 
 ### Configuration ###
 src/main/resources/application.yml
+
+### Deployment ###
+deploy.sh

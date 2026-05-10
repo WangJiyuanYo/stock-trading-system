@@ -84,28 +84,34 @@ public class StockService {
      */
     @Transactional
     public String saveOrUpdateStock(Stock stock) {
-        // 验证股票信息
         validateStock(stock);
-
-        // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
 
-        // 转换为数据库实体
         icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
 
-        // 查找是否已存在该股票代码
+        // 先查活跃记录
         icu.iseenu.stock.entity.Stock existingStock = stockMapper.selectByStockCode(stock.getStockCode());
-        
+
         if (existingStock != null) {
-            // 更新
+            // 活跃记录存在，直接更新
             stockEntity.setId(existingStock.getId());
             stockMapper.updateById(stockEntity);
             return "股票信息更新成功";
-        } else {
-            // 新增
-            stockMapper.insert(stockEntity);
-            return "股票信息添加成功";
         }
+
+        // 查是否存在已删除的记录（忽略逻辑删除过滤）
+        icu.iseenu.stock.entity.Stock deletedStock = stockMapper.selectByStockCodeAny(stock.getStockCode());
+        if (deletedStock != null) {
+            // 恢复已删除的记录
+            stockEntity.setId(deletedStock.getId());
+            stockEntity.setDeleted(0);
+            stockMapper.updateById(stockEntity);
+            return "股票信息恢复并更新成功";
+        }
+
+        // 全新插入
+        stockMapper.insert(stockEntity);
+        return "股票信息添加成功";
     }
 
     /**
@@ -117,22 +123,27 @@ public class StockService {
      */
     @Transactional
     public String addStock(Stock stock) {
-        // 验证股票信息
         validateStock(stock);
-
-        // 标准化股票代码
         stock.setStockCode(normalizeStockCode(stock.getStockCode()));
 
-        // 检查股票代码是否已存在
+        // 检查活跃记录是否已存在
         if (stockMapper.existsByStockCode(stock.getStockCode())) {
             throw new ValidationException("股票代码已存在：" + stock.getStockCode() +
                     "，请使用更新接口或先删除原有记录");
         }
 
-        // 转换为数据库实体并插入
+        // 检查是否存在已删除的记录，有则恢复
+        icu.iseenu.stock.entity.Stock deletedStock = stockMapper.selectByStockCodeAny(stock.getStockCode());
+        if (deletedStock != null) {
+            icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
+            stockEntity.setId(deletedStock.getId());
+            stockEntity.setDeleted(0);
+            stockMapper.updateById(stockEntity);
+            return "股票信息恢复并添加成功";
+        }
+
         icu.iseenu.stock.entity.Stock stockEntity = StockConverter.toEntity(stock);
         stockMapper.insert(stockEntity);
-
         return "股票信息添加成功";
     }
 

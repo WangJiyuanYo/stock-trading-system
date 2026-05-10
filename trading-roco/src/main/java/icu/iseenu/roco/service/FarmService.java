@@ -1,5 +1,6 @@
 package icu.iseenu.roco.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import icu.iseenu.roco.config.AppConfig;
 import icu.iseenu.roco.util.HttpClientUtil;
@@ -17,6 +18,23 @@ import java.util.Map;
 @Service
 @Slf4j
 public class FarmService {
+
+    /**
+     * 即将成熟的作物信息
+     */
+    public record NearlyRipePlant(
+            String uid,
+            int landIndex,
+            int slotIndex,
+            int seedId,
+            long ripTime,
+            String description
+    ) {
+        /** 唯一标识：UID:土地:槽位:种子:成熟时间，用于去重 */
+        public String uniqueKey() {
+            return uid + ":" + landIndex + ":" + slotIndex + ":" + seedId + ":" + ripTime;
+        }
+    }
 
     private static final ZoneId BEIJING_ZONE = ZoneId.of("Asia/Shanghai");
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -52,7 +70,7 @@ public class FarmService {
      * @param thresholdMinutes 阈值（分钟），距离成熟时间在此范围内的作物视为即将成熟
      * @return 即将成熟的作物文本描述列表，为空表示没有即将成熟的作物
      */
-    public List<String> getNearlyRipePlants(String uid, int thresholdMinutes) {
+    public List<NearlyRipePlant> getNearlyRipePlants(String uid, int thresholdMinutes) {
         log.info("检查家园作物成熟状态, uid={}, threshold={}min", uid, thresholdMinutes);
 
         if (!config.hasRocomApiKey()) {
@@ -169,7 +187,7 @@ public class FarmService {
         return sb.toString();
     }
 
-    private List<String> findNearlyRipePlants(JsonNode homeInfo, String uid, int thresholdMinutes) {
+    private List<NearlyRipePlant> findNearlyRipePlants(JsonNode homeInfo, String uid, int thresholdMinutes) {
         JsonNode landList = getLandList(homeInfo);
         if (landList == null) {
             return List.of();
@@ -177,7 +195,7 @@ public class FarmService {
 
         long nowSec = System.currentTimeMillis() / 1000;
         long thresholdSec = thresholdMinutes * 60L;
-        List<String> result = new ArrayList<>();
+        List<NearlyRipePlant> result = new ArrayList<>();
 
         for (JsonNode land : landList) {
             int landIndex = land.has("land_index") ? land.get("land_index").asInt() : 0;
@@ -201,16 +219,18 @@ public class FarmService {
                     String ripTimeStr = Instant.ofEpochSecond(ripTime).atZone(BEIJING_ZONE).format(DTF);
                     int seedId = plant.has("plant_seed_id") ? plant.get("plant_seed_id").asInt() : 0;
                     int slotIndex = plant.has("slot_index") ? plant.get("slot_index").asInt() : 0;
-                    result.add(String.format("土地%d槽位%d: 种子%d已成熟，成熟时间%s",
-                            landIndex, slotIndex, seedId, ripTimeStr));
+                    String desc = String.format("土地%d槽位%d: 种子%d已成熟，成熟时间%s",
+                            landIndex, slotIndex, seedId, ripTimeStr);
+                    result.add(new NearlyRipePlant(uid, landIndex, slotIndex, seedId, ripTime, desc));
                 } else if (remainingSec <= thresholdSec) {
                     // 即将成熟
                     String ripTimeStr = Instant.ofEpochSecond(ripTime).atZone(BEIJING_ZONE).format(DTF);
                     int seedId = plant.has("plant_seed_id") ? plant.get("plant_seed_id").asInt() : 0;
                     int slotIndex = plant.has("slot_index") ? plant.get("slot_index").asInt() : 0;
                     long minutes = remainingSec / 60;
-                    result.add(String.format("土地%d槽位%d: 种子%d将在%d分钟后成熟，预计%s",
-                            landIndex, slotIndex, seedId, minutes, ripTimeStr));
+                    String desc = String.format("土地%d槽位%d: 种子%d将在%d分钟后成熟，预计%s",
+                            landIndex, slotIndex, seedId, minutes, ripTimeStr);
+                    result.add(new NearlyRipePlant(uid, landIndex, slotIndex, seedId, ripTime, desc));
                 }
             }
         }

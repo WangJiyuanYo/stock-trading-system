@@ -28,6 +28,8 @@ public class FarmMonitorService {
         this.notificationService = notificationService;
     }
 
+    private Boolean isPush = false;
+
     public void monitorFarms() {
         List<String> uids = config.getFarmUids();
         if (uids == null || uids.isEmpty()) {
@@ -43,15 +45,21 @@ public class FarmMonitorService {
             }
 
             try {
-                List<String> plants = farmService.getNearlyRipePlants(uid.trim(), THRESHOLD_MINUTES);
-                if (!plants.isEmpty()) {
+                List<FarmService.NearlyRipePlant> plants = farmService.getNearlyRipePlants(uid.trim(), THRESHOLD_MINUTES);
+                if (!plants.isEmpty() && isPush) {
+                    String plantsText = plants.stream()
+                            .map(FarmService.NearlyRipePlant::description)
+                            .reduce((a, b) -> a + "\n" + b)
+                            .orElse("");
                     String content = "**洛克王国家园作物成熟提醒**\n\nUID: " + uid.trim() + "\n\n" +
-                            String.join("\n", plants) +
+                            plantsText +
                             "\n\n---\n⏰ 请及时收获，避免被偷菜！";
                     notificationService.sendAlert("洛克王国家园作物成熟提醒", content);
+                    isPush = false;
                     log.info("✅ 已发送成熟提醒, uid={}, 作物数={}", uid, plants.size());
                 } else {
                     log.debug("无即将成熟作物, uid={}", uid);
+                    isPush = true;
                 }
             } catch (Exception e) {
                 log.error("家园监控异常, uid={}", uid, e);

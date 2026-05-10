@@ -38,7 +38,7 @@
             <groupId>icu.iseenu</groupId>
             <artifactId>trading-roco</artifactId>
         </dependency>
-        
+
         <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
