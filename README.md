@@ -38,6 +38,8 @@
 - **定时执行**：每天 8:01、12:01、16:01、20:01 自动执行监控
 - **截图上传**：自动生成商品详情图并上传到图床
 - **即时推送**：发现商人刷新立即推送通知
+- ~~**家园种植监控**~~：已禁用（注释保留，可随时恢复）
+- ~~**家园种植监控**~~：已禁用（注释保留，可随时恢复）
 
 ### 🌐 飞书机器人
 
@@ -571,6 +573,7 @@ mvn dependency:tree
   - [x] 排除飞书 SDK 的 commons-logging 依赖
   - [x] 优化定时任务配置
   - [x] 完整的架构文档和迁移指南
+- [x] **禁用家园种植监控**（2026年6月7日）：注释 FarmScheduledTask / FarmMonitorService / FarmService / RocoAssistant.queryFarm / RocoTools.queryFarmInfo 及 YAML 配置，远行商人功能不受影响
 
 ### 🚧 进行中
 

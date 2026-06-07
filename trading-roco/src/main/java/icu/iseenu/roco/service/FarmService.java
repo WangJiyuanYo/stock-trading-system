@@ -15,7 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
+// [家园监控已关闭] 取消 @Service 注解，不再注册为 Spring Bean
+// @Service
 @Slf4j
 public class FarmService {
 

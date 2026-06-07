@@ -17,12 +17,13 @@ public interface RocoAssistant {
     @UserMessage("查询洛克王国远行商人当前售卖情况")
     String queryMerchant(String message);
 
-    @Agent(description = "查询洛克王国玩家的家园种植信息，根据UID获取种植的作物及预计成熟时间")
-    @SystemMessage("""
-        调用 queryFarmInfo 工具获取家园种植数据，从用户消息中提取UID数字作为参数。
-        如果用户未提供UID，回复提示用户提供UID。
-        禁止生成任何过渡文字，直接返回工具返回的内容。
-        """)
-    @UserMessage("查询洛克王国家园种植信息: {{message}}")
-    String queryFarm(String message);
+    // [家园监控已关闭] 禁用家园种植查询 Agent
+    // @Agent(description = "查询洛克王国玩家的家园种植信息，根据UID获取种植的作物及预计成熟时间")
+    // @SystemMessage("""
+    //     调用 queryFarmInfo 工具获取家园种植数据，从用户消息中提取UID数字作为参数。
+    //     如果用户未提供UID，回复提示用户提供UID。
+    //     禁止生成任何过渡文字，直接返回工具返回的内容。
+    //     """)
+    // @UserMessage("查询洛克王国家园种植信息: {{message}}")
+    // String queryFarm(String message);
 }
