@@ -3,6 +3,7 @@ package icu.iseenu.stock.controller;
 import icu.iseenu.common.Result;
 import icu.iseenu.domain.entity.Stock;
 import icu.iseenu.domain.entity.StockMarketData;
+import icu.iseenu.domain.entity.StockQuote;
 import icu.iseenu.stock.api.StockApiService;
 import icu.iseenu.stock.service.StockService;
 import org.springframework.web.bind.annotation.*;
@@ -273,6 +274,27 @@ public class StockController {
             return Result.success("获取成功", overviewList);
         } catch (Exception e) {
             return Result.internalError("获取盈亏概览失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 通用股票行情查询（自动识别 A 股 / 美股，价格 + 涨跌幅，不含持仓盈亏）
+     *
+     * @param stockCode 股票代码（A 股 6 位数字 或 美股字母代码，如 600000 / SPCX）
+     * @return 行情数据
+     */
+    @GetMapping("/quote/{stockCode}")
+    public Result<StockQuote> getQuote(@PathVariable String stockCode) {
+        try {
+            StockQuote quote = stockApiService.fetchQuote(stockCode);
+            if (quote == null) {
+                return Result.notFound("未获取到行情数据：" + stockCode);
+            }
+            return Result.success("获取成功", quote);
+        } catch (IllegalArgumentException e) {
+            return Result.badRequest(e.getMessage());
+        } catch (Exception e) {
+            return Result.internalError("获取行情失败：" + e.getMessage());
         }
     }
 
