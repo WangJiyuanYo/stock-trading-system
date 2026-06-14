@@ -3,8 +3,10 @@ package icu.iseenu.stock.api;
 import icu.iseenu.domain.entity.Stock;
 import icu.iseenu.domain.entity.StockMarketData;
 import icu.iseenu.domain.entity.StockQuote;
+import icu.iseenu.domain.enums.StockTypeEnum;
 import icu.iseenu.stock.api.strategy.MarketQuoteStrategy;
 import icu.iseenu.stock.service.StockService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ import java.util.List;
  * 调用新浪财经 API 获取股票实时行情数据
  */
 @Service
+@Slf4j
 public class StockApiService {
 
     private static final String API_URL = "https://hq.sinajs.cn/list=";
@@ -71,10 +74,24 @@ public class StockApiService {
     // ============ 以下为现有 A 股 + 持仓盈亏路径，行为不变 ============
 
     /**
-     * 从数据库读取所有股票代码并获取行情数据（包含盈亏计算）
+     * 从数据库读取所有 A 股持仓代码并获取行情数据（包含盈亏计算）
+     * <p>
+     * 仅纳入 stockType = "A 股" 的持仓——美股 / 港股 / 贵金属等不参与盈亏汇总。
+     * 持仓盈亏的所有入口（定时任务 / Controller `/profit-summary` `/profit-overview`
+     * `/market-data/all` / AI 工具 `getStockTableWithProfit`）都收口在这里，
+     * 单点过滤，避免在每个调用方各自重复。
      */
     public List<StockMarketData> fetchAllStockMarketDataWithProfit() {
-        List<Stock> allStocks = stockService.getAllStocks();
+        List<Stock> allHoldings = stockService.getAllStocks();
+        List<Stock> allStocks = allHoldings.stream()
+                .filter(s -> StockTypeEnum.A_SHARE.getName().equals(s.getStockType()))
+                .toList();
+
+        int filteredOut = allHoldings.size() - allStocks.size();
+        if (filteredOut > 0) {
+            log.info("持仓盈亏计算：纳入 {} 只 A 股，已排除 {} 只非 A 股持仓",
+                    allStocks.size(), filteredOut);
+        }
 
         if (allStocks.isEmpty()) {
             return new ArrayList<>();
