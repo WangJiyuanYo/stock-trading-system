@@ -155,9 +155,28 @@ public class StockApiService {
     }
 
     /**
-     * 根据股票代码获取行情数据（包含盈亏计算）
+     * 单只持仓的行情 + 盈亏。仅支持 A 股持仓。
+     * <p>
+     * 传入的代码若 DB 里登记为美股 / 港股 / 等，直接返回 null —— 调用方应改用 fetchQuote/getQuote。
+     * 否则会盲目走新浪美股 28 字段响应撞 A 股 32 字段解析下限，静默失败。
      */
     public StockMarketData fetchStockMarketDataWithProfit(String stockCode) {
+        if (stockCode == null || stockCode.trim().isEmpty()) {
+            return null;
+        }
+
+        // 用 DB 里登记的市场类型来卡——非 A 股不去新浪查，直接返回 null
+        Stock stock = stockService.findByStockCode(stockCode.trim().toUpperCase());
+        if (stock == null) {
+            log.warn("fetchStockMarketDataWithProfit: 未找到持仓记录 stockCode={}", stockCode);
+            return null;
+        }
+        if (!StockTypeEnum.A_SHARE.getName().equals(stock.getStockType())) {
+            log.info("fetchStockMarketDataWithProfit: 非 A 股持仓 stockCode={} stockType={}，建议使用 fetchQuote",
+                    stockCode, stock.getStockType());
+            return null;
+        }
+
         StockMarketData marketData;
         try {
             marketData = fetchStockMarketData(stockCode);
@@ -166,16 +185,11 @@ public class StockApiService {
         }
 
         if (marketData != null) {
-            List<Stock> allStocks = stockService.getAllStocks();
             String pureCode = removeMarketPrefix(marketData.getStockCode());
-
-            for (Stock stock : allStocks) {
-                if (pureCode.equals(stock.getStockCode())) {
-                    marketData.setHoldingQuantity(stock.getHoldingQuantity());
-                    marketData.setHoldingPrice(stock.getHoldingPrice());
-                    marketData.setHoldingCost(stock.getHoldingCost());
-                    break;
-                }
+            if (pureCode.equals(stock.getStockCode())) {
+                marketData.setHoldingQuantity(stock.getHoldingQuantity());
+                marketData.setHoldingPrice(stock.getHoldingPrice());
+                marketData.setHoldingCost(stock.getHoldingCost());
             }
         }
 
