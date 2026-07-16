@@ -2,12 +2,12 @@ package icu.iseenu.notification.channel;
 
 import icu.iseenu.infra.config.NotificationProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.List;
 
 /**
  * NotifyMe 通知渠道
@@ -29,16 +29,38 @@ public class NotifyMeChannel implements NotificationChannel {
 
     @Override
     public void send(String title, String message) {
+        send("default", title, message);
+    }
+
+    @Override
+    public void send(String scene, String title, String message) {
         if (!isEnabled()) {
             return;
         }
-        
-        String uuid = notificationProperties.getNotifyme().getUuid();
-        if (uuid == null || uuid.trim().isEmpty()) {
-            log.warn("NotifyMe UUID 未配置，无法发送消息");
+
+        List<String> uuids = notificationProperties.getNotifyme().getResolvedUuids(scene);
+        if (uuids.isEmpty()) {
+            log.warn("NotifyMe 场景 {} 未配置有效接收人，无法发送消息", scene);
             return;
         }
 
+        int successCount = 0;
+        for (int i = 0; i < uuids.size(); i++) {
+            if (sendToUuid(uuids.get(i), scene, title, message, i + 1, uuids.size())) {
+                successCount++;
+            }
+        }
+
+        if (successCount == uuids.size()) {
+            log.info("NotifyMe 场景 {} 全部推送成功，共 {} 个接收端✅", scene, successCount);
+        } else {
+            log.warn("NotifyMe 场景 {} 推送完成：成功 {} 个，失败 {} 个",
+                    scene, successCount, uuids.size() - successCount);
+        }
+    }
+
+    private boolean sendToUuid(String uuid, String scene, String title, String message,
+                               int current, int total) {
         try {
             // 发送 GET 请求，使用 UriBuilder 让 WebClient 自动处理编码
             String response = webClient.get()
@@ -49,7 +71,7 @@ public class NotifyMeChannel implements NotificationChannel {
                             .queryParam("uuid", uuid)
                             .queryParam("title", title != null ? title : "")
                             .queryParam("body", message != null ? message : "")
-                            .queryParam("group", DEFAULT_GROUP)
+                            .queryParam("group", resolveGroup(scene))
                             .queryParam("bigText", DEFAULT_BIG_TEXT)
                             .build())
                     .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
@@ -57,18 +79,25 @@ public class NotifyMeChannel implements NotificationChannel {
                     .bodyToMono(String.class)
                     .block();
 
-            log.info("NotifyMe 推送响应：{}", response);
-            
             // 检查响应是否成功
             if (response != null && response.contains("\"isSuccess\":true")) {
-                log.info("NotifyMe 推送成功✅");
-            } else {
-                log.warn("NotifyMe 推送可能失败，响应：{}", response);
+                log.info("NotifyMe 推送成功 [{}/{}]✅", current, total);
+                return true;
             }
-            
+
+            log.warn("NotifyMe 推送失败 [{}/{}]，响应：{}", current, total, response);
         } catch (Exception e) {
-            log.error("NotifyMe 推送失败：{}", e.getMessage(), e);
+            // 单个接收端失败不影响其余 UUID 继续发送
+            log.error("NotifyMe 推送异常 [{}/{}]：{}", current, total, e.getMessage(), e);
         }
+        return false;
+    }
+
+    private String resolveGroup(String scene) {
+        if (scene == null || scene.isBlank() || "default".equalsIgnoreCase(scene)) {
+            return DEFAULT_GROUP;
+        }
+        return scene.trim().toUpperCase();
     }
 
     @Override

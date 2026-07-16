@@ -34,11 +34,16 @@ feishu:
   app-secret: ${FEISHU_APP_SECRET:}  # 飞书 App Secret，环境变量 FEISHU_APP_SECRET
 
 notification:
-  enabled-channels: serverchan,notifyme,feishu
+  enabled-channels: notifyme,feishu
   serverchan:
     sckey: ${SERVERCHAN_SENDKEY:}
   notifyme:
-    uuid: ${NOTIFYME_UUID:}
+    # 旧版配置，users 未配置时作为兼容回退
+    uuids: ${NOTIFYME_UUIDS:${NOTIFYME_UUID:}}
+    # 可直接在 YAML 添加任意用户
+    users: []
+    # 格式：用户名|UUID|场景1,场景2;用户名|UUID|场景1
+    users-config: ${NOTIFYME_USERS:}
     base-url: https://notifyme-server.wzn556.top/?
   feishu:
     webhook-url: ${FEISHU_WEBHOOK_URL:}

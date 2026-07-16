@@ -227,7 +227,7 @@ public class StockDataScheduledTask {
      */
     private void sendNotification(String title, String message) {
         try {
-            notificationService.sendAlert(title, message);
+            notificationService.sendAlert("stock", title, message);
             log.info("通知推送成功✅");
         } catch (Exception e) {
             log.error("通知推送失败❌: {}", e.getMessage(), e);

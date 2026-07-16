@@ -39,6 +39,18 @@ public class NotificationService {
      * @param content 内容
      */
     public void sendAlert(String title, String content) {
+        sendAlert("default", title, content);
+    }
+
+    /**
+     * 按业务场景发送通知到所有启用的渠道。
+     * NotifyMe 会根据场景选择接收人，其他渠道保持原有行为。
+     *
+     * @param scene 通知场景，如 stock、roco
+     * @param title 标题
+     * @param content 内容
+     */
+    public void sendAlert(String scene, String title, String content) {
         if (channels.isEmpty()) {
             log.warn("没有启用任何通知渠道");
             return;
@@ -46,10 +58,10 @@ public class NotificationService {
 
         channels.forEach(channel -> {
             try {
-                channel.send(title, content);
+                channel.send(scene, title, content);
             } catch (Exception e) {
                 // 记录错误，但不中断其他渠道的发送
-                log.error("渠道 {} 发送失败", channel.getName(), e);
+                log.error("场景 {} 的渠道 {} 发送失败", scene, channel.getName(), e);
             }
         });
     }

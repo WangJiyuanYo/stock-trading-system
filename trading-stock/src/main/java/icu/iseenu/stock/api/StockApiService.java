@@ -84,7 +84,7 @@ public class StockApiService {
     public List<StockMarketData> fetchAllStockMarketDataWithProfit() {
         List<Stock> allHoldings = stockService.getAllStocks();
         List<Stock> allStocks = allHoldings.stream()
-                .filter(s -> StockTypeEnum.A_SHARE.getName().equals(s.getStockType()))
+                .filter(s -> StockTypeEnum.isAShare(s.getStockType()))
                 .toList();
 
         int filteredOut = allHoldings.size() - allStocks.size();
@@ -171,7 +171,7 @@ public class StockApiService {
             log.warn("fetchStockMarketDataWithProfit: 未找到持仓记录 stockCode={}", stockCode);
             return null;
         }
-        if (!StockTypeEnum.A_SHARE.getName().equals(stock.getStockType())) {
+        if (!StockTypeEnum.isAShare(stock.getStockType())) {
             log.info("fetchStockMarketDataWithProfit: 非 A 股持仓 stockCode={} stockType={}，建议使用 fetchQuote",
                     stockCode, stock.getStockType());
             return null;

@@ -69,7 +69,7 @@ public class FarmMonitorService {
                         String content = "**洛克王国家园作物成熟提醒**\n\nUID: " + uid.trim() + "\n\n" +
                                 plantsText +
                                 "\n\n---\n请及时收获，避免被偷菜！";
-                        notificationService.sendAlert("洛克王国家园作物成熟提醒", content);
+                        notificationService.sendAlert("roco", "洛克王国家园作物成熟提醒", content);
                         lastNotifiedFingerprint.put(uid.trim(), currentFingerprint);
                         log.info("已发送成熟提醒, uid={}, 作物数={}", uid, plants.size());
                     } else {

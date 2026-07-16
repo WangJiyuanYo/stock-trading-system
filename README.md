@@ -279,11 +279,18 @@ langchain4j:
 
 # 通知渠道配置
 notification:
-  enabled-channels: serverchan,notifyme  # 启用的通知渠道（逗号分隔）
-  serverchan:
-    sckey: your_serverchan_sendkey       # Server 酱 SendKey
+  enabled-channels: notifyme,feishu
   notifyme:
-    uuid: your_notifyme_uuid             # NotifyMe UUID
+    users:
+      - name: A
+        uuid: UUID_A
+        subscribe:
+          - stock
+          - roco
+      - name: B
+        uuid: UUID_B
+        subscribe:
+          - roco
 
 # 飞书机器人配置
 feishu:
@@ -321,8 +328,7 @@ java -jar trading-application/target/trading-application-1.0.0-SNAPSHOT.jar
 ```bash
 java -jar trading-application/target/trading-application-1.0.0-SNAPSHOT.jar \
   -Dlangchain4j.open-ai.chat-model.api-key=your_deepseek_api_key \
-  -Dnotification.serverchan.sckey=your_serverchan_sendkey \
-  -Dnotification.notifyme.uuid=your_notifyme_uuid \
+  -DNOTIFYME_USERS="A|uuid_a|stock,roco;B|uuid_b|roco" \
   -Dfeishu.app-id=your_feishu_app_id \
   -Dfeishu.app-secret=your_feishu_app_secret \
   -Droco.rocom-api-key=your_rocom_api_key \
@@ -367,6 +373,13 @@ java -jar trading-application/target/trading-application-1.0.0-SNAPSHOT.jar \
 |------|-------------------|-------------|
 | POST | `/feishu/webhook` | 飞书机器人消息接收端点 |
 
+### 洛克王国接口
+
+| 方法 | 路径                            | 描述                                      |
+|----|-------------------------------|-----------------------------------------|
+| GET | `/api/roco/merchant/test`     | 测试远行商人上游接口并返回当前商品，不截图、不上传、不推送 |
+| POST | `/api/roco/merchant/test/full` | 执行完整链路：查询、截图、ImgBB 上传并向启用渠道发送通知 |
+
 ### AI 接口
 
 | 方法  | 路径                                  | 描述                      |
@@ -400,11 +413,18 @@ app:
 
 # 通知渠道配置
 notification:
-  enabled-channels: serverchan,notifyme  # 启用的通知渠道
-  serverchan:
-    sckey: SCTxxxxx            # Server 酱 SendKey
+  enabled-channels: notifyme,feishu
   notifyme:
-    uuid: YOUR_UUID            # NotifyMe UUID（从 App 获取）
+    users:
+      - name: A
+        uuid: UUID_A
+        subscribe:
+          - stock
+          - roco
+      - name: B
+        uuid: UUID_B
+        subscribe:
+          - roco
 
 # 飞书机器人配置
 feishu:
@@ -485,6 +505,52 @@ public void executeTask() {
 2. 添加 `@Component` 注解
 3. 在配置文件中启用该渠道
 
+### 配置 NotifyMe 用户订阅
+
+每个用户配置自己的 UUID 和订阅场景。业务代码只发送 `stock` 或 `roco`
+场景，不需要知道有哪些用户：
+
+```yaml
+notification:
+  notifyme:
+    users:
+      - name: A
+        uuid: UUID_A
+        subscribe:
+          - stock
+          - roco
+      - name: B
+        uuid: UUID_B
+        subscribe:
+          - roco
+      - name: admin
+        uuid: ADMIN_UUID
+        subscribe:
+          - "*"   # 接收全部场景
+```
+
+当前内置场景：
+
+- `stock`：股票日报。
+- `roco`：远行商人和洛克王国家园通知。
+- `default`：没有显式指定场景的通知。
+
+生产环境推荐使用单个环境变量，无需在 `application.yml` 预先声明用户：
+
+```bash
+export NOTIFYME_USERS="A|UUID_A|stock,roco;B|UUID_B|roco"
+```
+
+新增用户 D 时，只需在变量末尾追加：
+
+```bash
+export NOTIFYME_USERS="A|UUID_A|stock,roco;B|UUID_B|roco;D|UUID_D|stock,roco"
+```
+
+不需要修改 Java 代码或 `application.yml`。配置 `users` 后，如果某个场景
+没有订阅用户，NotifyMe 将跳过该场景；旧的 `uuid/uuids` 仅在完全没有配置
+`users` 时作为兼容回退。
+
 ## 🐛 常见问题
 
 ### 1. 编译错误
@@ -521,7 +587,7 @@ mvn dependency:tree
 
 ### 6. NotifyMe 推送失败
 
-- 确认 NotifyMe UUID 配置正确（在 App 设置中获取）
+- 确认 NotifyMe UUID 列表配置正确（在 App 设置中获取，多个值使用英文逗号分隔）
 - 检查网络连接是否正常
 - 确保 NotifyMe App 已在手机上安装并运行
 

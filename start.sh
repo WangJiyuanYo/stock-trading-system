@@ -10,7 +10,11 @@ export DEEPSEEK_API_KEY="sk-your-deepseek-api-key"
 export FEISHU_APP_ID=""
 export FEISHU_APP_SECRET=""
 export SERVERCHAN_SENDKEY=""
+# 旧版默认 UUID，保留兼容
 export NOTIFYME_UUID=""
+# NotifyMe 用户订阅：
+# 用户名|UUID|场景1,场景2;用户名|UUID|场景1
+export NOTIFYME_USERS="A|UUID_A|stock,roco;B|UUID_B|roco;C|UUID_C|stock"
 export ROCOM_API_KEY=""
 export IMGBB_API_KEY=""
 

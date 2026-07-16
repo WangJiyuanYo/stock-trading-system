@@ -38,7 +38,10 @@
       "Bash(git reset *)",
       "Bash(scp *)",
       "Bash(ssh *)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(xargs grep -l -i \"scheduled\\\\|fetchStockMarketDataWithProfit\\\\|定时\")",
+      "Bash(python *)",
+      "Bash(mvn -q -pl trading-domain,trading-stock,trading-application -am compile -DskipTests)"
     ]
   },
   "hooks": {
