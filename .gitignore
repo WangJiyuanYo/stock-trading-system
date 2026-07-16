@@ -51,3 +51,8 @@ src/main/resources/application.yml
 
 ### Deployment ###
 deploy.sh
+
+### Roco render artifacts ###
+merchant_render.jpg
+temp_render.html
+
