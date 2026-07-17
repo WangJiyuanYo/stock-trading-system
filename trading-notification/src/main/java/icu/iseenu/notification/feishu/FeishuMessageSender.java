@@ -24,11 +24,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 @Slf4j
 public class FeishuMessageSender implements NotificationChannel {
+
+    private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile(
+            "!\\[([^\\]]*)]\\((https?://[^\\s)]+)\\)");
 
     private final NotificationProperties notificationProperties;
     private final Client client;
@@ -63,33 +70,111 @@ public class FeishuMessageSender implements NotificationChannel {
             return;
         }
 
-        String textContent = message.replace("# ", "").replace("## ", "").replace("|", "");
-
-        StringBuilder cardBuilder = new StringBuilder();
-        cardBuilder.append("{");
-        cardBuilder.append("\"config\":{\"wide_screen_mode\":true},");
-        cardBuilder.append("\"header\":{\"title\":{\"tag\":\"plain_text\",\"content\":\"");
-        cardBuilder.append(escapeJson(title));
-        cardBuilder.append("\"},\"template\":\"blue\"},");
-        cardBuilder.append("\"elements\":[");
-        cardBuilder.append("{\"tag\":\"div\",\"text\":{\"tag\":\"lark_md\",\"content\":\"");
-        cardBuilder.append(escapeJson(textContent));
-        cardBuilder.append("\"}}");
-        cardBuilder.append("]}");
+        String payload = buildWebhookPayload(title, removeMarkdownImages(message));
 
         try {
-            String response = webClient.post()
-                    .uri(webhookUrl)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .bodyValue(cardBuilder.toString())
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-
+            String response = postWebhook(webhookUrl, payload);
             log.info("飞书 Webhook 通知发送成功: {}", response);
+
+            for (ImageReference image : extractMarkdownImages(message)) {
+                sendWebhookImage(webhookUrl, image);
+            }
         } catch (Exception e) {
             log.error("飞书 Webhook 通知发送失败", e);
         }
+    }
+
+    private String postWebhook(String webhookUrl, String payload) {
+        return webClient.post()
+                .uri(webhookUrl)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+
+    private void sendWebhookImage(String webhookUrl, ImageReference image) {
+        if (client == null) {
+            sendWebhookImageLink(webhookUrl, image);
+            return;
+        }
+
+        try {
+            String imageKey = uploadImage(image.url());
+            String response = postWebhook(webhookUrl, buildImageWebhookPayload(imageKey));
+            log.info("飞书 Webhook 图片发送成功: {}", response);
+        } catch (Exception e) {
+            log.warn("飞书图片上传或发送失败，降级为图片链接: {}", e.getMessage());
+            sendWebhookImageLink(webhookUrl, image);
+        }
+    }
+
+    private void sendWebhookImageLink(String webhookUrl, ImageReference image) {
+        try {
+            String imageMessage = image.label() + "：" + image.url();
+            String imageResponse = postWebhook(webhookUrl, buildTextWebhookPayload(imageMessage));
+            log.info("飞书 Webhook 图片链接发送成功: {}", imageResponse);
+        } catch (Exception e) {
+            log.error("飞书 Webhook 图片链接发送失败", e);
+        }
+    }
+
+    /**
+     * Custom-bot webhooks require the outer msg_type and card fields. The SDK
+     * message API below accepts the card object itself, so it intentionally does
+     * not use this wrapper.
+     */
+    static String buildWebhookPayload(String title, String message) {
+        String textContent = (message == null ? "" : message)
+                .replace("# ", "").replace("## ", "").replace("|", "");
+
+        StringBuilder cardBuilder = new StringBuilder();
+        cardBuilder.append("{\"msg_type\":\"interactive\",\"card\":{");
+        cardBuilder.append("\"config\":{\"wide_screen_mode\":true},");
+        cardBuilder.append("\"header\":{\"title\":{\"tag\":\"plain_text\",\"content\":\"");
+        cardBuilder.append(escapeJsonStatic(title));
+        cardBuilder.append("\"},\"template\":\"blue\"},");
+        cardBuilder.append("\"elements\":[");
+        cardBuilder.append("{\"tag\":\"div\",\"text\":{\"tag\":\"lark_md\",\"content\":\"");
+        cardBuilder.append(escapeJsonStatic(textContent));
+        cardBuilder.append("\"}}]}}");
+        return cardBuilder.toString();
+    }
+
+    static String buildTextWebhookPayload(String message) {
+        return "{\"msg_type\":\"text\",\"content\":{\"text\":\""
+                + escapeJsonStatic(message) + "\"}}";
+    }
+
+    static String buildImageWebhookPayload(String imageKey) {
+        return "{\"msg_type\":\"image\",\"content\":{\"image_key\":\""
+                + escapeJsonStatic(imageKey) + "\"}}";
+    }
+
+    static String removeMarkdownImages(String message) {
+        if (message == null || message.isBlank()) {
+            return message == null ? "" : message;
+        }
+        String withoutImages = MARKDOWN_IMAGE_PATTERN.matcher(message).replaceAll("");
+        return withoutImages.replaceAll("\\n{3,}", "\\n\\n").trim();
+    }
+
+    static List<ImageReference> extractMarkdownImages(String message) {
+        List<ImageReference> images = new ArrayList<>();
+        if (message == null || message.isBlank()) {
+            return images;
+        }
+
+        Matcher matcher = MARKDOWN_IMAGE_PATTERN.matcher(message);
+        while (matcher.find()) {
+            String label = matcher.group(1).isBlank() ? "图片详情" : matcher.group(1);
+            images.add(new ImageReference(label, matcher.group(2)));
+        }
+        return images;
+    }
+
+    record ImageReference(String label, String url) {
     }
 
     // ── 定向发送（SDK API） ──
@@ -148,33 +233,8 @@ public class FeishuMessageSender implements NotificationChannel {
             return;
         }
 
-        File tempFile = null;
         try {
-            String extension = imageUrl.contains(".png") ? ".png" : ".jpg";
-            Path tempPath = Files.createTempFile("feishu_img_", extension);
-            tempFile = tempPath.toFile();
-            try (InputStream in = new URL(imageUrl).openStream()) {
-                Files.copy(in, tempPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-            log.info("图片下载完成: {} -> {}", imageUrl, tempFile.getAbsolutePath());
-
-            CreateImageReqBody imageBody = CreateImageReqBody.newBuilder()
-                    .imageType("message")
-                    .image(tempFile)
-                    .build();
-            CreateImageReq imageReq = CreateImageReq.newBuilder()
-                    .createImageReqBody(imageBody)
-                    .build();
-            CreateImageResp imageResp = client.im().v1().image().create(imageReq);
-
-            if (!imageResp.success()) {
-                log.error("上传图片到飞书失败 - code:{}, msg:{}",
-                        imageResp.getCode(), imageResp.getMsg());
-                return;
-            }
-
-            String imageKey = imageResp.getData().getImageKey();
-            log.info("图片上传飞书成功: imageKey={}", imageKey);
+            String imageKey = uploadImage(imageUrl);
 
             String content = "{\"image_key\":\"" + imageKey + "\"}";
             CreateMessageReq msgReq = CreateMessageReq.newBuilder()
@@ -196,14 +256,46 @@ public class FeishuMessageSender implements NotificationChannel {
             }
         } catch (Exception e) {
             log.error("发送图片消息异常", e);
-        } finally {
-            if (tempFile != null && tempFile.exists()) {
-                tempFile.delete();
+        }
+    }
+
+    private String uploadImage(String imageUrl) throws Exception {
+        String extension = imageUrl.contains(".png") ? ".png" : ".jpg";
+        Path tempPath = Files.createTempFile("feishu_img_", extension);
+        File tempFile = tempPath.toFile();
+        try {
+            try (InputStream in = new URL(imageUrl).openStream()) {
+                Files.copy(in, tempPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
+            log.info("图片下载完成: {} -> {}", imageUrl, tempFile.getAbsolutePath());
+
+            CreateImageReqBody imageBody = CreateImageReqBody.newBuilder()
+                    .imageType("message")
+                    .image(tempFile)
+                    .build();
+            CreateImageReq imageReq = CreateImageReq.newBuilder()
+                    .createImageReqBody(imageBody)
+                    .build();
+            CreateImageResp imageResp = client.im().v1().image().create(imageReq);
+            if (!imageResp.success()) {
+                throw new IllegalStateException("上传图片到飞书失败 - code:" + imageResp.getCode()
+                        + ", msg:" + imageResp.getMsg());
+            }
+
+            String imageKey = imageResp.getData().getImageKey();
+            log.info("图片上传飞书成功: imageKey={}", imageKey);
+            return imageKey;
+        } finally {
+            Files.deleteIfExists(tempPath);
         }
     }
 
     private String escapeJson(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+        return escapeJsonStatic(s);
+    }
+
+    private static String escapeJsonStatic(String value) {
+        String safeValue = value == null ? "" : value;
+        return safeValue.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
     }
 }

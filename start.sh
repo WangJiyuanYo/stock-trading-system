@@ -9,6 +9,7 @@ set -e
 export DEEPSEEK_API_KEY="sk-your-deepseek-api-key"
 export FEISHU_APP_ID=""
 export FEISHU_APP_SECRET=""
+export FEISHU_WEBHOOK_URL=""
 export SERVERCHAN_SENDKEY=""
 # 旧版默认 UUID，保留兼容
 export NOTIFYME_UUID=""

@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * NotifyMe 通知渠道
@@ -21,6 +23,8 @@ public class NotifyMeChannel implements NotificationChannel {
 
     private static final String DEFAULT_GROUP = "STOCK";
     private static final boolean DEFAULT_BIG_TEXT = false;
+    private static final Pattern MARKDOWN_IMAGE_PATTERN = Pattern.compile(
+            "!\\[([^\\]]*)]\\((https?://[^\\s)]+)\\)");
 
     public NotifyMeChannel(NotificationProperties notificationProperties, WebClient.Builder webClientBuilder) {
         this.notificationProperties = notificationProperties;
@@ -62,6 +66,7 @@ public class NotifyMeChannel implements NotificationChannel {
     private boolean sendToUuid(String uuid, String scene, String title, String message,
                                int current, int total) {
         try {
+            String notifyMeMessage = formatMessage(message);
             // 发送 GET 请求，使用 UriBuilder 让 WebClient 自动处理编码
             String response = webClient.get()
                     .uri(uriBuilder -> uriBuilder
@@ -70,7 +75,7 @@ public class NotifyMeChannel implements NotificationChannel {
                             .path("/")
                             .queryParam("uuid", uuid)
                             .queryParam("title", title != null ? title : "")
-                            .queryParam("body", message != null ? message : "")
+                            .queryParam("body", notifyMeMessage)
                             .queryParam("group", resolveGroup(scene))
                             .queryParam("bigText", DEFAULT_BIG_TEXT)
                             .build())
@@ -91,6 +96,27 @@ public class NotifyMeChannel implements NotificationChannel {
             log.error("NotifyMe 推送异常 [{}/{}]：{}", current, total, e.getMessage(), e);
         }
         return false;
+    }
+
+    /**
+     * NotifyMe does not render Markdown images in the notification body. Convert
+     * them to a readable label followed by the original URL, while leaving the
+     * source message unchanged for channels that support richer content.
+     */
+    static String formatMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return message == null ? "" : message;
+        }
+
+        Matcher matcher = MARKDOWN_IMAGE_PATTERN.matcher(message);
+        StringBuffer result = new StringBuffer();
+        while (matcher.find()) {
+            String label = matcher.group(1).isBlank() ? "图片" : matcher.group(1);
+            String replacement = label + "：" + matcher.group(2);
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     private String resolveGroup(String scene) {
