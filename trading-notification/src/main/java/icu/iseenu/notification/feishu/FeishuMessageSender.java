@@ -11,6 +11,7 @@ import com.lark.oapi.service.im.v1.model.CreateMessageReqBody;
 import com.lark.oapi.service.im.v1.model.CreateMessageResp;
 import icu.iseenu.infra.config.NotificationProperties;
 import icu.iseenu.notification.channel.NotificationChannel;
+import icu.iseenu.notification.NotificationDeliveryResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.Duration;
 
 @Component
 @Slf4j
@@ -58,29 +60,36 @@ public class FeishuMessageSender implements NotificationChannel {
 
     @Override
     public boolean isEnabled() {
-        String enabledChannels = notificationProperties.getEnabledChannels();
-        return enabledChannels != null && enabledChannels.contains(getName());
+        return notificationProperties.isChannelEnabled(getName());
     }
 
     @Override
     public void send(String title, String message) {
+        sendWithResult("default", title, message);
+    }
+
+    @Override
+    public NotificationDeliveryResult sendWithResult(String scene, String title, String message) {
         String webhookUrl = notificationProperties.getFeishu().getWebhookUrl();
         if (webhookUrl == null || webhookUrl.trim().isEmpty()) {
             log.warn("飞书 Webhook URL 未配置，无法发送广播通知");
-            return;
+            return NotificationDeliveryResult.failure(getName(), "FEISHU_WEBHOOK_URL is not configured");
         }
 
         String payload = buildWebhookPayload(title, removeMarkdownImages(message));
 
         try {
             String response = postWebhook(webhookUrl, payload);
+            assertWebhookSucceeded(response);
             log.info("飞书 Webhook 通知发送成功: {}", response);
 
             for (ImageReference image : extractMarkdownImages(message)) {
                 sendWebhookImage(webhookUrl, image);
             }
+            return NotificationDeliveryResult.success(getName());
         } catch (Exception e) {
             log.error("飞书 Webhook 通知发送失败", e);
+            return NotificationDeliveryResult.failure(getName(), e.getMessage());
         }
     }
 
@@ -91,7 +100,20 @@ public class FeishuMessageSender implements NotificationChannel {
                 .bodyValue(payload)
                 .retrieve()
                 .bodyToMono(String.class)
-                .block();
+                .block(Duration.ofSeconds(15));
+    }
+
+    private void assertWebhookSucceeded(String response) {
+        try {
+            int code = JsonParser.parseString(response).getAsJsonObject().get("code").getAsInt();
+            if (code != 0) {
+                throw new IllegalStateException("Feishu webhook rejected message: " + response);
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Invalid Feishu webhook response: " + response, e);
+        }
     }
 
     private void sendWebhookImage(String webhookUrl, ImageReference image) {
@@ -103,6 +125,7 @@ public class FeishuMessageSender implements NotificationChannel {
         try {
             String imageKey = uploadImage(image.url());
             String response = postWebhook(webhookUrl, buildImageWebhookPayload(imageKey));
+            assertWebhookSucceeded(response);
             log.info("飞书 Webhook 图片发送成功: {}", response);
         } catch (Exception e) {
             log.warn("飞书图片上传或发送失败，降级为图片链接: {}", e.getMessage());
@@ -114,6 +137,7 @@ public class FeishuMessageSender implements NotificationChannel {
         try {
             String imageMessage = image.label() + "：" + image.url();
             String imageResponse = postWebhook(webhookUrl, buildTextWebhookPayload(imageMessage));
+            assertWebhookSucceeded(imageResponse);
             log.info("飞书 Webhook 图片链接发送成功: {}", imageResponse);
         } catch (Exception e) {
             log.error("飞书 Webhook 图片链接发送失败", e);
@@ -264,7 +288,10 @@ public class FeishuMessageSender implements NotificationChannel {
         Path tempPath = Files.createTempFile("feishu_img_", extension);
         File tempFile = tempPath.toFile();
         try {
-            try (InputStream in = new URL(imageUrl).openStream()) {
+            java.net.URLConnection connection = new URL(imageUrl).openConnection();
+            connection.setConnectTimeout(10_000);
+            connection.setReadTimeout(20_000);
+            try (InputStream in = connection.getInputStream()) {
                 Files.copy(in, tempPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
             log.info("图片下载完成: {} -> {}", imageUrl, tempFile.getAbsolutePath());

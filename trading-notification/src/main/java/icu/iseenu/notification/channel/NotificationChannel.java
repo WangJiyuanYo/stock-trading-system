@@ -1,5 +1,7 @@
 package icu.iseenu.notification.channel;
 
+import icu.iseenu.notification.NotificationDeliveryResult;
+
 /**
  * 通知渠道接口
  * 每个实现类代表一个通知渠道（如 Server 酱、NotifyMe 等）
@@ -23,6 +25,15 @@ public interface NotificationChannel {
      */
     default void send(String scene, String title, String message) {
         send(title, message);
+    }
+
+    default NotificationDeliveryResult sendWithResult(String scene, String title, String message) {
+        try {
+            send(scene, title, message);
+            return NotificationDeliveryResult.success(getName());
+        } catch (Exception e) {
+            return NotificationDeliveryResult.failure(getName(), e.getMessage());
+        }
     }
     
     /**

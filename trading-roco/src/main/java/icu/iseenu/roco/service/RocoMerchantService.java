@@ -2,6 +2,7 @@ package icu.iseenu.roco.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import icu.iseenu.notification.NotificationService;
+import icu.iseenu.notification.NotificationDeliveryResult;
 import icu.iseenu.roco.config.AppConfig;
 import icu.iseenu.roco.model.MerchantMonitorResult;
 import icu.iseenu.roco.model.Product;
@@ -84,8 +85,11 @@ public class RocoMerchantService {
             List<String> enabledChannels = notificationService.getEnabledChannels();
             result.setNotificationChannels(enabledChannels);
             if (!enabledChannels.isEmpty()) {
-                notificationService.sendAlert("roco", "洛克王国远行商人", alertMessage);
-                result.setNotificationTriggered(true);
+                List<NotificationDeliveryResult> notificationResults =
+                        notificationService.sendAlert("roco", "洛克王国远行商人", alertMessage);
+                result.setNotificationResults(notificationResults);
+                result.setNotificationTriggered(!notificationResults.isEmpty()
+                        && notificationResults.stream().allMatch(NotificationDeliveryResult::success));
             }
 
             if (result.isFullChainSuccessful()) {

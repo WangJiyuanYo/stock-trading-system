@@ -37,7 +37,7 @@ public class StockDataScheduledTask {
      * 每天 11:31 执行（上午收盘前??
      * cron 表达式：????????????
      */
-    @Scheduled(cron = "0 31 11 * * ?")
+    @Scheduled(cron = "${stock.morning-cron:0 31 11 * * ?}", zone = "${app.time-zone:Asia/Shanghai}")
     public void fetchDailyStockDataMorning() {
         log.info("========== 开始执行上午股票数据定时任??(11:31) ==========");
         executeTask();
@@ -47,7 +47,7 @@ public class StockDataScheduledTask {
      * 每天 15:01 执行（下午收盘后??
      * cron 表达式：????????????
      */
-    @Scheduled(cron = "0 1 15 * * ?")
+    @Scheduled(cron = "${stock.afternoon-cron:0 1 15 * * ?}", zone = "${app.time-zone:Asia/Shanghai}")
     public void fetchDailyStockDataAfternoon() {
         log.info("========== 开始执行下午股票数据定时任??(15:01) ==========");
         executeTask();

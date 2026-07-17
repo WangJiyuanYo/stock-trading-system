@@ -78,8 +78,7 @@ public class ServerChanChannel implements NotificationChannel {
     
     @Override
     public boolean isEnabled() {
-        String enabledChannels = notificationProperties.getEnabledChannels();
-        return enabledChannels != null && enabledChannels.contains(getName());
+        return notificationProperties.isChannelEnabled(getName());
     }
 
     /**

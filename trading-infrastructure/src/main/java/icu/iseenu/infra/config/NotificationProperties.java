@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Arrays;
 
 /**
  * 通知配置属性
@@ -37,6 +38,15 @@ public class NotificationProperties {
      * 飞书配置
      */
     private Feishu feishu = new Feishu();
+
+    public boolean isChannelEnabled(String channel) {
+        if (channel == null || channel.isBlank() || enabledChannels == null) {
+            return false;
+        }
+        return Arrays.stream(enabledChannels.split(","))
+                .map(String::trim)
+                .anyMatch(channel::equalsIgnoreCase);
+    }
 
     @Data
     public static class ServerChan {

@@ -4,9 +4,7 @@ server:
 spring:
   application:
     name: autoCodeWorkspace
-
-
-
+  
   # SQLite数据库配置
   datasource:
     # Windows路径示例: jdbc:sqlite:D:/codes/stock.db 或 jdbc:sqlite:D:\\codes\\stock.db
@@ -20,7 +18,6 @@ mybatis-plus:
   type-aliases-package: icu.iseenu.stock.entity
   configuration:
     map-underscore-to-camel-case: true  # 下划线转驼峰
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印SQL日志
   global-config:
     db-config:
       id-type: auto  # 主键自增
@@ -39,6 +36,7 @@ langchain4j:
         enable_thinking: false
 
 app:
+  time-zone: ${APP_TIME_ZONE:Asia/Shanghai}
   json:
     storage:
       path: ./data/json
@@ -74,6 +72,10 @@ roco:
   imgbb-key: ${IMGBB_API_KEY:}  # 图床API密钥，环境变量 IMGBB_API_KEY
   notifyme-uuid: ${NOTIFYME_UUID:}  # Notify.me UUID
   cron: "0 5 8,12,16,20 * * ?"  # 定时任务cron表达式
+
+stock:
+  morning-cron: "0 31 11 * * ?"
+  afternoon-cron: "0 1 15 * * ?"
   # [家园监控已关闭] 禁用家园种植监控
   # farm-uids:
   #   - 503689802

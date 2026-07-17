@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * 远行商人截图异步服务 — 供飞书查询和定时任务复用
@@ -68,14 +70,15 @@ public class MerchantScreenshotAsyncService {
             return null;
         }
         try {
-            String outputDir = System.getProperty("user.dir");
-            HtmlGenerator htmlGenerator = new HtmlGenerator(outputDir, AppConfig.TEMP_RENDER_FILE);
+            Path workDir = Files.createTempDirectory("roco-merchant-");
+            HtmlGenerator htmlGenerator = new HtmlGenerator(workDir.toString(), AppConfig.TEMP_RENDER_FILE);
             String htmlPath = htmlGenerator.generateHtml(templateData);
             if (htmlPath == null) {
                 return null;
             }
 
-            ScreenshotService screenshotService = new ScreenshotService(AppConfig.SCREENSHOT_FILE);
+            String screenshotFile = workDir.resolve(AppConfig.SCREENSHOT_FILE).toString();
+            ScreenshotService screenshotService = new ScreenshotService(screenshotFile);
             String screenshotPath = screenshotService.captureScreenshot(htmlPath);
             if (screenshotPath == null) {
                 return null;

@@ -1,6 +1,7 @@
 package icu.iseenu.roco.model;
 
 import lombok.Data;
+import icu.iseenu.notification.NotificationDeliveryResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ public class MerchantMonitorResult {
     private String imageUrl;
     private TemplateData merchantData;
     private List<String> notificationChannels = new ArrayList<>();
+    private List<NotificationDeliveryResult> notificationResults = new ArrayList<>();
 
     public boolean isFullChainSuccessful() {
         return dataFetched && screenshotUploaded && notificationTriggered;

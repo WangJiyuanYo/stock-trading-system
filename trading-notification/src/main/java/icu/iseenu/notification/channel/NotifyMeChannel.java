@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.time.Duration;
 
 /**
  * NotifyMe 通知渠道
@@ -82,7 +83,7 @@ public class NotifyMeChannel implements NotificationChannel {
                     .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .block();
+                    .block(Duration.ofSeconds(15));
 
             // 检查响应是否成功
             if (response != null && response.contains("\"isSuccess\":true")) {
@@ -133,8 +134,7 @@ public class NotifyMeChannel implements NotificationChannel {
     
     @Override
     public boolean isEnabled() {
-        String enabledChannels = notificationProperties.getEnabledChannels();
-        return enabledChannels != null && enabledChannels.contains(getName());
+        return notificationProperties.isChannelEnabled(getName());
     }
 
 

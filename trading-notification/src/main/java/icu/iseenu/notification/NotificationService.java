@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -38,8 +39,8 @@ public class NotificationService {
      * @param title 标题
      * @param content 内容
      */
-    public void sendAlert(String title, String content) {
-        sendAlert("default", title, content);
+    public List<NotificationDeliveryResult> sendAlert(String title, String content) {
+        return sendAlert("default", title, content);
     }
 
     /**
@@ -50,20 +51,21 @@ public class NotificationService {
      * @param title 标题
      * @param content 内容
      */
-    public void sendAlert(String scene, String title, String content) {
+    public List<NotificationDeliveryResult> sendAlert(String scene, String title, String content) {
         if (channels.isEmpty()) {
             log.warn("没有启用任何通知渠道");
-            return;
+            return List.of();
         }
 
-        channels.forEach(channel -> {
-            try {
-                channel.send(scene, title, content);
-            } catch (Exception e) {
-                // 记录错误，但不中断其他渠道的发送
-                log.error("场景 {} 的渠道 {} 发送失败", scene, channel.getName(), e);
+        List<NotificationDeliveryResult> results = new ArrayList<>();
+        for (NotificationChannel channel : channels) {
+            NotificationDeliveryResult result = channel.sendWithResult(scene, title, content);
+            results.add(result);
+            if (!result.success()) {
+                log.error("场景 {} 的渠道 {} 发送失败: {}", scene, channel.getName(), result.detail());
             }
-        });
+        }
+        return results;
     }
     
     /**
