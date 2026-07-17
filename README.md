@@ -35,7 +35,7 @@
 ### 🎮 洛克王国监控
 
 - **远行商人监控**：自动监控洛克王国远行商人刷新
-- **定时执行**：每天 8:01、12:01、16:01、20:01 自动执行监控
+- **定时执行**：每天 8:05、12:05、16:05、20:05 自动执行监控
 - **截图上传**：自动生成商品详情图并上传到图床
 - **即时推送**：发现商人刷新立即推送通知
 - ~~**家园种植监控**~~：已禁用（注释保留，可随时恢复）
@@ -302,7 +302,7 @@ roco:
   rocom-api-key: your_rocom_api_key   # 洛克王国 API 密钥
   imgbb-key: your_imgbb_key           # ImgBB 图床密钥
   notifyme-uuid: your_notifyme_uuid   # NotifyMe UUID
-  cron: "0 1 8,12,16,20 * * ?"        # 定时任务 cron 表达式
+  cron: "0 5 8,12,16,20 * * ?"        # 定时任务 cron 表达式
 ```
 
 #### 3. 编译运行
@@ -336,6 +336,78 @@ java -jar trading-application/target/trading-application-1.0.0-SNAPSHOT.jar \
 ```
 
 后端服务将在 `http://localhost:8080` 启动
+
+## 通知与运行配置更新
+
+### NotifyMe 用户与场景订阅
+
+NotifyMe 使用 `NOTIFYME_USERS` 配置接收人及订阅场景，格式为：
+
+```bash
+export NOTIFYME_USERS="A|UUID_A|stock,roco;B|UUID_B|roco;C|UUID_C|stock"
+```
+
+- `stock`：股票收益通知。
+- `roco`：远行商人通知。
+- `*`：订阅全部场景。
+
+业务代码只发送场景，不需要因新增用户修改 Java 代码。
+
+### 飞书群 Webhook
+
+配置群内“自定义机器人”的 Webhook 地址：
+
+```bash
+export FEISHU_WEBHOOK_URL="https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
+export FEISHU_APP_ID="cli_xxx"
+export FEISHU_APP_SECRET="xxx"
+```
+
+`FEISHU_APP_ID` 与 `FEISHU_APP_SECRET` 用于把远行商人截图上传到飞书并以原生图片消息展示；未配置或上传失败时会自动降级为图片链接。
+
+飞书 Webhook 可通过 `notification.feishu.enabled-scenes` 限制场景。当前默认只发送远行商人，不发送股票收益：
+
+```yaml
+notification:
+  feishu:
+    enabled-scenes: roco
+```
+
+多个场景可用逗号分隔；`*` 表示全部场景；空值表示不限制场景。
+
+### 通知结果与超时
+
+通知服务会返回每个渠道的发送结果。飞书 Webhook 会校验飞书响应中的 `code`，只有 `code: 0` 才视为成功。远行商人全链路接口会在 `notificationResults` 中返回各渠道状态；任一已参与渠道失败时，接口不会再误报全链路成功。
+
+NotifyMe 与飞书 Webhook 的整体响应超时为 15 秒；飞书图片下载连接超时为 10 秒、读取超时为 20 秒。远行商人每次生成截图使用独立临时目录，避免手工测试与定时任务并发覆盖图片。
+
+### 定时任务
+
+所有定时任务使用 `APP_TIME_ZONE`，默认 `Asia/Shanghai`：
+
+```bash
+export APP_TIME_ZONE="Asia/Shanghai"
+```
+
+股票任务 cron 可配置：
+
+```yaml
+stock:
+  morning-cron: "0 31 11 * * ?"
+  afternoon-cron: "0 1 15 * * ?"
+```
+
+远行商人 cron 使用 `roco.cron`，默认 `0 5 8,12,16,20 * * ?`。
+
+### 远行商人全链路测试
+
+```bash
+curl -X POST http://localhost:8080/api/roco/merchant/test/full
+```
+
+该接口会依次执行数据获取、截图、ImgBB 上传、NotifyMe 推送与飞书群推送。它会产生真实通知，请勿在不需要时频繁调用。
+
+> 不要将真实 API Key、Webhook 地址或 UUID 提交到 Git。请在服务器环境变量、IDEA 本地启动参数或未跟踪的本地配置中保存密钥。
 
 ## 📡 API 接口
 
@@ -436,7 +508,7 @@ roco:
   rocom-api-key: sk-xxx        # 洛克王国 API 密钥
   imgbb-key: xxxxxxx           # ImgBB 图床密钥
   notifyme-uuid: YOUR_UUID     # NotifyMe UUID
-  cron: "0 1 8,12,16,20 * * ?" # 定时任务 cron 表达式
+  cron: "0 5 8,12,16,20 * * ?" # 定时任务 cron 表达式
 ```
 
 ## 📊 数据格式

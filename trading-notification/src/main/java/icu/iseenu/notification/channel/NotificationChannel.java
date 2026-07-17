@@ -35,6 +35,10 @@ public interface NotificationChannel {
             return NotificationDeliveryResult.failure(getName(), e.getMessage());
         }
     }
+
+    default boolean supportsScene(String scene) {
+        return true;
+    }
     
     /**
      * 渠道名称（用于配置和日志）

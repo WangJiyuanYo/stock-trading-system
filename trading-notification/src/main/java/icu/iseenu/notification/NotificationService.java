@@ -59,6 +59,10 @@ public class NotificationService {
 
         List<NotificationDeliveryResult> results = new ArrayList<>();
         for (NotificationChannel channel : channels) {
+            if (!channel.supportsScene(scene)) {
+                log.debug("渠道 {} 未订阅场景 {}，跳过发送", channel.getName(), scene);
+                continue;
+            }
             NotificationDeliveryResult result = channel.sendWithResult(scene, title, content);
             results.add(result);
             if (!result.success()) {

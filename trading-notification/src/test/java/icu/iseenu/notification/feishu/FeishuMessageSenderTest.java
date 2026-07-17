@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
 class FeishuMessageSenderTest {
 
@@ -118,5 +119,14 @@ class FeishuMessageSenderTest {
         assertEquals("image", payload.get("msg_type").getAsString());
         assertEquals("img_test_key", payload.getAsJsonObject("content")
                 .get("image_key").getAsString());
+    }
+
+    @Test
+    void shouldOnlySupportConfiguredScenes() {
+        props.getFeishu().setEnabledScenes(List.of("roco"));
+        FeishuMessageSender sender = new FeishuMessageSender(props, null, WebClient.builder());
+
+        assertTrue(sender.supportsScene("roco"));
+        assertFalse(sender.supportsScene("stock"));
     }
 }

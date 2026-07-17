@@ -202,5 +202,8 @@ public class NotificationProperties {
          * 例如：https://open.feishu.cn/open-apis/bot/v2/hook/xxx
          */
         private String webhookUrl = "";
+
+        /** Business scenes allowed to use the Feishu webhook. Empty means all scenes. */
+        private List<String> enabledScenes = new ArrayList<>();
     }
 }

@@ -47,6 +47,7 @@ notification:
     base-url: https://notifyme-server.wzn556.top/?
   feishu:
     webhook-url: ${FEISHU_WEBHOOK_URL:}
+    enabled-scenes: roco
 
 # 洛克王国远行商人配置
 roco:

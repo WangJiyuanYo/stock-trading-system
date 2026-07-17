@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -61,6 +62,19 @@ public class FeishuMessageSender implements NotificationChannel {
     @Override
     public boolean isEnabled() {
         return notificationProperties.isChannelEnabled(getName());
+    }
+
+    @Override
+    public boolean supportsScene(String scene) {
+        List<String> enabledScenes = notificationProperties.getFeishu().getEnabledScenes();
+        if (enabledScenes == null || enabledScenes.isEmpty()) {
+            return true;
+        }
+        String normalizedScene = scene == null ? "default" : scene.trim().toLowerCase(Locale.ROOT);
+        return enabledScenes.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                .anyMatch(value -> "*".equals(value) || value.equals(normalizedScene));
     }
 
     @Override
